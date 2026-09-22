@@ -1861,7 +1861,7 @@ th[data-sort-col] {
             </div>
 
             <div>
-              <label class="block font-semibold text-indigo-900 mb-1">4. Pagamento Líquido (= 2 + 3)</label>
+              <label class="block font-semibold text-indigo-900 mb-1">4. Pagamento Líquido (= 2 − 3)</label>
               <input type="number" step="0.01" id="ml-pagamento-liquido" readonly class="w-full p-2 bg-indigo-50 border border-indigo-200 rounded-xl font-extrabold text-indigo-950">
             </div>
           </div>
@@ -1878,7 +1878,7 @@ th[data-sort-col] {
                 <input type="number" step="0.01" id="ml-complemento" placeholder="0.00" oninput="recalcularMultiLoteEmissao()" class="w-full p-2 bg-white border border-slate-200 rounded-xl font-bold">
               </div>
               <div>
-                <label class="block font-semibold text-slate-700 mb-1">6. ISS / Impostos (+)</label>
+                <label class="block font-semibold text-slate-700 mb-1">6. ISS / Impostos (retenção)</label>
                 <input type="number" step="0.01" id="ml-iss" placeholder="0.00" oninput="recalcularMultiLoteEmissao()" class="w-full p-2 bg-white border border-slate-200 rounded-xl font-bold">
               </div>
             </div>
@@ -1911,9 +1911,10 @@ th[data-sort-col] {
 
           <div id="ml-summary-box" class="p-3 bg-slate-900 text-slate-200 rounded-xl space-y-1.5 text-[11px] font-medium">
             <div class="flex justify-between text-slate-300"><span>Valor Faturado Bruto:</span><span id="ml-sum-bruto" class="font-bold text-white">R$ 0,00</span></div>
-            <div class="flex justify-between text-emerald-400"><span>Pagamento Líquido + Complemento + ISS:</span><span id="ml-sum-retencoes">R$ 0,00</span></div>
+            <div class="flex justify-between text-emerald-400"><span>Caixa desta NF (líquido + complemento − vínculos):</span><span id="ml-sum-retencoes">R$ 0,00</span></div>
             <div class="flex justify-between text-indigo-300"><span>Vínculos / Abatimentos Anteriores:</span><span id="ml-sum-vinculos">R$ 0,00</span></div>
-            <div class="flex justify-between text-emerald-400 font-extrabold border-t border-slate-800 pt-1"><span>7. Líquido NF Final (= 4 + 5 + 6):</span><span id="ml-sum-liquido">R$ 0,00</span></div>
+            <div class="flex justify-between text-slate-400"><span>ISS (retenção, não entra em caixa):</span><span id="ml-sum-iss">R$ 0,00</span></div>
+            <div class="flex justify-between text-emerald-400 font-extrabold border-t border-slate-800 pt-1"><span>7. Documento (4 + 5 + 6):</span><span id="ml-sum-liquido">R$ 0,00</span></div>
           </div>
         </div>
 
@@ -2013,6 +2014,7 @@ th[data-sort-col] {
         <input type="hidden" id="rec-fatura-id">
         <input type="hidden" id="rec-mov-id">
         <input type="hidden" id="rec-valor-pago-hidden" value="0">
+        <input type="hidden" id="rec-valor-recuperado-hidden" value="0">
         
         <div id="rec-fatura-summary" class="p-3 bg-slate-50 border border-slate-200 rounded-xl text-slate-700 font-medium"></div>
         <div id="rec-convenio-rules-guide" class="p-3 bg-amber-50 border border-amber-200 rounded-xl text-amber-950 text-[11px] font-medium hidden"></div>
@@ -16945,7 +16947,7 @@ th[data-sort-col] {
       const canalHist = h.canal ? `, ${labelCanalCobranca(h.canal)}` : "";
       return `- ${formatDateBR(h.data)} (${h.operador}${canalHist}): ${h.resumo}`;
     }).join("\n") || "- Nenhum contato pr\xE9vio registrado.";
-    const valorDisputa = mov.valor_recursado || valorARecursar(mov);
+    const valorDisputa = valorARecursar(mov);
     const valores = [
       `Valor faturado da nota: ${formatBRL(fat.valor_total)}`,
       `Valor pago neste lote: ${formatBRL(mov.valor_pago)}`,
@@ -17085,17 +17087,17 @@ Pode nos retornar com o posicionamento, por favor?`;
   function isParcelaPendenteAnalise(status2) {
     return status2.includes("AGUARDANDO") || status2.includes("PENDENTE") || isSemRecurso(status2);
   }
-  function statusParcelaFromInstancia(instancia, valorRecursado) {
-    if (valorRecursado <= 0) return "\u{1F534} PERDA ACEITA";
+  function statusParcelaFromInstancia(instancia, valorRecursado, valorRecuperado = 0) {
+    if (valorRecursado <= 0) return valorRecuperado > 9e-3 ? "\u{1F7E2} LIQUIDADO" : "\u{1F534} PERDA ACEITA";
     if (instancia === "REPLICA") return "\u{1F7E0} R\xC9PLICA DE RECURSO";
     if (instancia === "TREPLICA") return "\u{1F7E0} TR\xC9PLICA DE RECURSO";
     return "\u{1F7E0} EM RECURSO";
   }
   function valorARecursar(m2) {
     if (m2.status_parcela === "\u{1F7E2} LIQUIDADO" || m2.status_parcela === "\u{1F534} PERDA ACEITA") return 0;
-    if ((m2.valor_recuperado_recurso || 0) > 0) return round2(Math.max(0, m2.valor_recursado || 0));
-    if ((m2.valor_recursado || 0) > 0) return round2(m2.valor_recursado);
-    return round2(Math.max(0, (m2.valor_glosado || 0) - (m2.valor_glosa_aceita || 0)));
+    const recup = Math.max(0, m2.valor_recuperado_recurso || 0);
+    if ((m2.valor_recursado || 0) > 0) return round2(Math.max(0, m2.valor_recursado || 0));
+    return round2(Math.max(0, (m2.valor_glosado || 0) - (m2.valor_glosa_aceita || 0) - recup));
   }
   function valorRecursoOriginal(m2) {
     return round2(valorARecursar(m2) + Math.max(0, m2.valor_recuperado_recurso || 0));
@@ -17105,8 +17107,16 @@ Pode nos retornar com o posicionamento, por favor?`;
     const valorPago = round2(Math.max(0, params.valorPago || 0));
     const glosaBruta = round2(Math.max(0, valorBruto - valorPago));
     const glosaAceita = round2(Math.min(Math.max(0, params.glosaAceita || 0), glosaBruta));
-    const valorRecursado = round2(Math.max(0, glosaBruta - glosaAceita));
-    return { valorBruto, valorPago, glosaBruta, glosaAceita, valorRecursado };
+    const tetoRecup = round2(Math.max(0, glosaBruta - glosaAceita));
+    const valorRecuperado = round2(Math.min(Math.max(0, params.valorRecuperado || 0), tetoRecup));
+    const valorRecursado = round2(Math.max(0, tetoRecup - valorRecuperado));
+    return { valorBruto, valorPago, glosaBruta, glosaAceita, valorRecuperado, valorRecursado };
+  }
+  function valorCaixaMovimentacao(m2) {
+    return round2((m2.valor_pago || 0) + (m2.valor_recuperado_recurso || 0));
+  }
+  function valorIssFatura(fatura2) {
+    return round2(Math.max(0, fatura2.detalhe_emissao?.iss || 0));
   }
   function inferValorBrutoLote(m2) {
     if ((m2.valor_bruto_lote || 0) > 0) return round2(m2.valor_bruto_lote);
@@ -17168,6 +17178,8 @@ Pode nos retornar com o posicionamento, por favor?`;
     return diffDaysISO(dep.data_recebimento, hoje) >= dias;
   }
   function valorRateadoDeposito(dep) {
+    const linhas = dep.rateios || [];
+    if (linhas.length) return round2(linhas.reduce((acc, r2) => acc + (r2.valor || 0), 0));
     if ((dep.valor_rateado || 0) > 0) return round2(Math.max(0, dep.valor_rateado || 0));
     if (dep.status === "Conciliado") return round2(Math.max(0, dep.valor || 0));
     return 0;
@@ -17201,7 +17213,9 @@ Pode nos retornar com o posicionamento, por favor?`;
         temRecursoAtivo = true;
       }
     });
-    fatura2.valor_saldo = round2(Math.max(0, (fatura2.valor_total || 0) - (totalPago + totalGlosaAceita + totalRecuperado)));
+    fatura2.valor_saldo = round2(
+      Math.max(0, (fatura2.valor_total || 0) - (totalPago + totalGlosaAceita + totalRecuperado + valorIssFatura(fatura2)))
+    );
     if (fatura2.valor_saldo === 0) {
       fatura2.status = totalGlosaAceita > 0 ? "Finalizada (Com Glosa)" : "Liquidada";
     } else if (temGlosaPendente) {
@@ -17257,6 +17271,133 @@ Pode nos retornar com o posicionamento, por favor?`;
       };
     }
     return { ok: true, total, residual: round2(Math.max(0, disponivel - total)) };
+  }
+  function sincronizarDeposito(dep) {
+    const linhas = dep.rateios || [];
+    dep.rateios = linhas;
+    dep.valor_rateado = valorRateadoDeposito(dep);
+    const disponivel = valorDisponivelDeposito(dep);
+    dep.status = statusDepositoAposRateio(disponivel, dep.valor_rateado || 0);
+    return dep;
+  }
+  function restoreStatusParcela(mov) {
+    const aberto = round2(Math.max(0, mov.valor_recursado || 0));
+    if (aberto <= 9e-3) {
+      mov.valor_recursado = 0;
+      mov.status_parcela = (mov.valor_recuperado_recurso || 0) > 9e-3 ? "\u{1F7E2} LIQUIDADO" : "\u{1F534} PERDA ACEITA";
+      return;
+    }
+    if (!mov.data_envio_recurso || isSemRecurso(mov.protocolo_recurso)) {
+      mov.status_parcela = STATUS_SEM_RECURSO;
+      return;
+    }
+    mov.status_parcela = statusParcelaFromInstancia(mov.instancia_recurso, aberto, mov.valor_recuperado_recurso || 0);
+  }
+  function sameLanc(a, b2) {
+    return a.depositoId === b2.depositoId && a.tipo === b2.tipo && a.faturaId === b2.faturaId && (a.movId || "") === (b2.movId || "") && Math.abs((a.valor || 0) - (b2.valor || 0)) < 9e-3 && (a.data || "") === (b2.data || "");
+  }
+  function reverterLancamentoRateio(faturas, lanc) {
+    const fat = faturas.find((f) => f.id === lanc.faturaId);
+    if (!fat) return;
+    if (lanc.tipo === "RECURSO") {
+      const mov2 = fat.movimentacoes.find((m2) => lanc.movId && m2.id === lanc.movId) || fat.movimentacoes.find((m2) => (m2.historico_rateio || []).some((h) => sameLanc(h, lanc)));
+      if (!mov2) return;
+      mov2.valor_recuperado_recurso = round2(Math.max(0, (mov2.valor_recuperado_recurso || 0) - (lanc.valor || 0)));
+      mov2.valor_recursado = round2((mov2.valor_recursado || 0) + (lanc.valor || 0));
+      mov2.historico_rateio = (mov2.historico_rateio || []).filter((h) => !sameLanc(h, lanc));
+      restoreStatusParcela(mov2);
+      recalculateFaturaSaldo(fat);
+      return;
+    }
+    const mov = (lanc.movId ? fat.movimentacoes.find((m2) => m2.id === lanc.movId) : void 0) || fat.movimentacoes.find((m2) => (m2.historico_rateio || []).some((h) => sameLanc(h, lanc))) || fat.movimentacoes.find(
+      (m2) => m2.identificador_bancario === lanc.ted && round2(m2.valor_pago || 0) === round2(lanc.valor || 0)
+    );
+    if (!mov) return;
+    const remaining = (mov.historico_rateio || []).filter((h) => !sameLanc(h, lanc));
+    if (!remaining.length) {
+      fat.movimentacoes = fat.movimentacoes.filter((m2) => m2.id !== mov.id);
+    } else {
+      mov.historico_rateio = remaining;
+      mov.valor_pago = round2(Math.max(0, (mov.valor_pago || 0) - (lanc.valor || 0)));
+      if (lanc.criaGlosa) {
+        mov.valor_glosado = round2(Math.max(0, (mov.valor_glosado || 0) - (mov.valor_recursado || 0)));
+        mov.valor_recursado = 0;
+        mov.status_parcela = (mov.valor_pago || 0) > 9e-3 ? "\u{1F7E2} LIQUIDADO" : mov.status_parcela;
+      }
+    }
+    recalculateFaturaSaldo(fat);
+  }
+  function reverterDepositoCompleto(data, dep) {
+    [...dep.rateios || []].forEach((lanc) => reverterLancamentoRateio(data.faturas, lanc));
+    dep.rateios = [];
+    dep.valor_rateado = 0;
+    dep.status = "Pendente";
+  }
+  function reverterRateiosDaFatura(data, faturaId) {
+    (data.depositos || []).forEach((dep) => {
+      const keep = [];
+      (dep.rateios || []).forEach((lanc) => {
+        if (lanc.faturaId === faturaId) reverterLancamentoRateio(data.faturas, lanc);
+        else keep.push(lanc);
+      });
+      dep.rateios = keep;
+      sincronizarDeposito(dep);
+    });
+  }
+  function reverterRateiosDoMov(data, faturaId, movId) {
+    (data.depositos || []).forEach((dep) => {
+      const keep = [];
+      (dep.rateios || []).forEach((lanc) => {
+        const hit = lanc.movId === movId || lanc.faturaId === faturaId && lanc.tipo === "NF" && data.faturas.find((f) => f.id === faturaId)?.movimentacoes.some((m2) => m2.id === movId && m2.identificador_bancario === lanc.ted);
+        if (hit) reverterLancamentoRateio(data.faturas, lanc);
+        else keep.push(lanc);
+      });
+      dep.rateios = keep;
+      sincronizarDeposito(dep);
+    });
+  }
+  function moneyOfFatura(fatura2) {
+    let caixa = 0;
+    let perda = 0;
+    let disputa = 0;
+    (fatura2.movimentacoes || []).forEach((m2) => {
+      caixa += valorCaixaMovimentacao(m2);
+      perda += m2.valor_glosa_aceita || 0;
+      disputa += valorARecursar(m2);
+    });
+    const iss = valorIssFatura(fatura2);
+    const saldo = round2(fatura2.valor_saldo || 0);
+    return {
+      emitido: round2(fatura2.valor_total || 0),
+      caixa: round2(caixa),
+      perda: round2(perda),
+      disputa: round2(disputa),
+      iss,
+      saldo,
+      saldoSemDisputa: round2(Math.max(0, saldo - round2(disputa)))
+    };
+  }
+  function sanitizarCaixaFatura(fatura2) {
+    const iss = valorIssFatura(fatura2);
+    let caixa = 0;
+    let perda = 0;
+    (fatura2.movimentacoes || []).forEach((m2) => {
+      caixa += valorCaixaMovimentacao(m2);
+      perda += m2.valor_glosa_aceita || 0;
+    });
+    let excess = round2(caixa + perda + iss - (fatura2.valor_total || 0));
+    if (excess > 9e-3) {
+      for (const m2 of fatura2.movimentacoes || []) {
+        if (excess <= 9e-3) break;
+        const recup = m2.valor_recuperado_recurso || 0;
+        if (recup <= 9e-3) continue;
+        const peel = round2(Math.min(excess, m2.valor_pago || 0, recup));
+        if (peel <= 9e-3) continue;
+        m2.valor_pago = round2(Math.max(0, (m2.valor_pago || 0) - peel));
+        excess = round2(excess - peel);
+      }
+    }
+    return recalculateFaturaSaldo(fatura2);
   }
   function inPeriodo(iso, filters, hoje) {
     if (!iso) return true;
@@ -17486,11 +17627,12 @@ Pode nos retornar com o posicionamento, por favor?`;
     faturas.forEach((f) => {
       totalFaturado += f.valor_total || 0;
       (f.movimentacoes || []).forEach((m2) => {
-        totalRecebido += m2.valor_pago || 0;
+        totalRecebido += valorCaixaMovimentacao(m2);
         glosaBrutaInicial += m2.valor_glosado || 0;
         glosaAceita += m2.valor_glosa_aceita || 0;
-        if (isParcelaEmDisputa(m2.status_parcela)) {
-          valorRecursadoAtivo += m2.valor_recursado || 0;
+        const emAberto = valorARecursar(m2);
+        if (emAberto > 9e-3) {
+          valorRecursadoAtivo += emAberto;
           qtdRecursoAtivo += 1;
         }
         valorRecuperado += m2.valor_recuperado_recurso || 0;
@@ -17938,10 +18080,8 @@ Pode nos retornar com o posicionamento, por favor?`;
         const dateStr = m2.data_movimentacao || f.data_emissao;
         if (!dateStr) return;
         const bucket = ensure(yearMonth(dateStr));
-        bucket.recebido += m2.valor_pago || 0;
-        if (isParcelaEmDisputa(m2.status_parcela) || (m2.valor_recursado || 0) > 0) {
-          bucket.recurso += m2.valor_recursado || 0;
-        }
+        bucket.recebido += valorCaixaMovimentacao(m2);
+        bucket.recurso += valorARecursar(m2);
       });
     });
     return mesesMap;
@@ -43047,7 +43187,7 @@ This typically indicates that your device does not have a healthy Internet conne
               id: "MOV_UNI_REC",
               identificador_bancario: "TED-UNI-902",
               data_movimentacao: "2026-09-02",
-              valor_pago: 31800,
+              valor_pago: 28600,
               valor_bruto_lote: 31800,
               valor_glosado: 3200,
               valor_glosa_aceita: 0,
@@ -43206,7 +43346,7 @@ This typically indicates that your device does not have a healthy Internet conne
         id: "LOG_SEED_1",
         ts: "2026-09-21T09:18:00",
         acao: "RECURSO_PROTOCOLADO",
-        resumo: "Protocolou recurso TISS da NF-4508 (Amil).",
+        resumo: "Protocolou recurso TISS da NF-4508 (Bradesco Sa\xFAde).",
         alvo: "NF-4508",
         detalhe: "Inst\xE2ncia RECURSO \xB7 protocolo TISS-4508-R1"
       }),
@@ -43224,7 +43364,7 @@ This typically indicates that your device does not have a healthy Internet conne
         acao: "COBRANCA_REGISTRADA",
         resumo: "Registrou cobran\xE7a por e-mail da NF-4460.",
         alvo: "NF-4460",
-        detalhe: "Canal EMAIL \xB7 SulAm\xE9rica"
+        detalhe: "Canal EMAIL \xB7 Amil"
       }),
       makeAuditEntry(actor("PERFIL_FINANCEIRO", "Carlos Financeiro", "Perfil: Financeiro"), {
         id: "LOG_SEED_4",
@@ -43232,7 +43372,7 @@ This typically indicates that your device does not have a healthy Internet conne
         acao: "FATURA_CRIADA",
         resumo: "Emitiu NFS-e NF-4501 (Bradesco Sa\xFAde).",
         alvo: "NF-4501",
-        detalhe: "Valor R$ 45.000,00"
+        detalhe: "Valor R$ 100.000,00"
       }),
       makeAuditEntry(actor("PERFIL_COBRANCA", "Lucas Cobran\xE7a", "Perfil: Cobran\xE7a / RCM"), {
         id: "LOG_SEED_5",
@@ -43292,22 +43432,28 @@ This typically indicates that your device does not have a healthy Internet conne
             ...m2,
             status_parcela: status2,
             protocolo_recurso: protocolo,
+            valor_pago: Number(m2.valor_pago) || 0,
             valor_recuperado_recurso: m2.valor_recuperado_recurso ?? 0,
+            valor_glosa_aceita: m2.valor_glosa_aceita ?? 0,
             historico_cobranca: m2.historico_cobranca ?? [],
             historico_rateio: m2.historico_rateio ?? [],
             titulo_recurso: m2.titulo_recurso ?? "",
             anotacao_recurso: m2.anotacao_recurso ?? ""
           };
         });
-        return recalculateFaturaSaldo({ ...f, movimentacoes: movs });
+        return sanitizarCaixaFatura({ ...f, movimentacoes: movs });
       }),
       depositos: src.depositos.map((d) => {
         const valor = Number(d.valor) || 0;
-        const rateadoInformado = Number(d.valor_rateado);
-        const valor_rateado = Number.isFinite(rateadoInformado) && rateadoInformado > 0 ? rateadoInformado : d.status === "Conciliado" ? valor : 0;
-        const residual = Math.max(0, valor - valor_rateado);
-        const status2 = d.status === "Conciliado" || residual <= 9e-3 ? "Conciliado" : valor_rateado > 9e-3 ? "Rateado Parcial" : "Pendente";
-        return { ...d, valor, valor_rateado, status: status2, rateios: Array.isArray(d.rateios) ? d.rateios : [] };
+        const rateios = Array.isArray(d.rateios) ? d.rateios : [];
+        const dep = sincronizarDeposito({
+          ...d,
+          valor,
+          rateios,
+          valor_rateado: Number(d.valor_rateado) || 0,
+          status: d.status || "Pendente"
+        });
+        return dep;
       }),
       logs: Array.isArray(src.logs) ? src.logs : []
     };
@@ -44499,7 +44645,7 @@ This typically indicates that your device does not have a healthy Internet conne
     const ordered = sortedRows("cobranca", filtered, {
       nota: (r2) => `${r2.fatura.numero_nota} ${r2.fatura.convenio}`,
       protocolo: (r2) => r2.mov.protocolo_recurso || "",
-      valor: (r2) => r2.mov.valor_recursado || 0,
+      valor: (r2) => valorARecursar(r2.mov),
       limite: (r2) => r2.mov.data_limite_resposta || "",
       previsao: (r2) => r2.mov.data_estimada_pagamento || "",
       atraso: (r2) => r2.atrasoResposta ? "Sem Resposta (Vencido)" : r2.atrasoPagamento ? "Inadimpl\xEAncia de Pgto" : r2.vencendoResposta7d ? "Resposta em 7 dias" : r2.vencendoCredito7d ? "Cr\xE9dito em 7 dias" : "Em atraso",
@@ -44524,7 +44670,7 @@ This typically indicates that your device does not have a healthy Internet conne
       </td>
       <td class="p-3.5"><div class="font-bold text-slate-800">${escapeHtml(f.numero_nota)}</div><div class="text-[10px] text-slate-400">${escapeHtml(f.convenio)} | Lote: ${escapeHtml(f.numero_lote || "-")}</div>${contatoLinha}</td>
       <td class="p-3.5 font-mono font-bold text-indigo-700">${escapeHtml(m2.protocolo_recurso)}${m2.titulo_recurso ? `<div class="text-[10px] font-sans font-semibold text-slate-500 mt-0.5">${escapeHtml(m2.titulo_recurso)}</div>` : ""}</td>
-      <td class="p-3.5 font-bold text-orange-600">${formatBRL(m2.valor_recursado)}</td>
+      <td class="p-3.5 font-bold text-orange-600">${formatBRL(valorARecursar(m2))}</td>
       <td class="p-3.5 ${atrasoResposta ? "text-rose-600 font-bold" : ""}">${formatDateBR(m2.data_limite_resposta)}</td>
       <td class="p-3.5 ${atrasoPagamento ? "text-rose-600 font-bold" : ""}">${formatDateBR(m2.data_estimada_pagamento)}</td>
       <td class="p-3.5"><span class="px-2 py-0.5 rounded text-[10px] font-bold ${atrasoResposta || atrasoPagamento ? "bg-rose-100 text-rose-800" : vencendoCredito7d ? "bg-emerald-100 text-emerald-800" : "bg-purple-100 text-purple-800"}">${atrasoResposta ? "Sem Resposta (Vencido)" : atrasoPagamento ? "Inadimpl\xEAncia de Pgto" : vencendoResposta7d ? "Resposta em 7 dias" : vencendoCredito7d ? "Cr\xE9dito em 7 dias" : "Em atraso"}</span>${semContatoRecente ? `<div class="text-[9px] text-rose-600 font-bold mt-0.5">Sem contato recente</div>` : ""}</td>
@@ -44575,7 +44721,7 @@ This typically indicates that your device does not have a healthy Internet conne
       <div><span class="text-slate-500">Inst\xE2ncia:</span> <b class="text-slate-800">${escapeHtml(instancia)}</b></div>
       <div><span class="text-slate-500">Pago:</span> <b class="text-emerald-700">${formatBRL(m2.valor_pago)}</b></div>
       <div><span class="text-slate-500">Glosa aceita:</span> <b class="text-rose-600">${formatBRL(m2.valor_glosa_aceita)}</b></div>
-      <div><span class="text-slate-500">Em disputa:</span> <b class="text-orange-600">${formatBRL(m2.valor_recursado)}</b></div>
+      <div><span class="text-slate-500">Em disputa:</span> <b class="text-orange-600">${formatBRL(valorARecursar(m2))}</b></div>
     </div>
     <div class="pt-2 border-t border-slate-100">
       <p class="font-semibold text-slate-700 mb-1.5">Etapas anteriores</p>
@@ -44611,17 +44757,12 @@ This typically indicates that your device does not have a healthy Internet conne
       );
     }
     const rows = faturas.map((f) => {
-      let recCaixa = 0;
-      let recPerda = 0;
-      (f.movimentacoes || []).forEach((m2) => {
-        recCaixa += m2.valor_pago || 0;
-        recPerda += m2.valor_glosa_aceita || 0;
-      });
-      totalEmissao += f.valor_total || 0;
-      totalCaixa += recCaixa;
-      totalPerda += recPerda;
-      totalProvisao += f.valor_saldo || 0;
-      return { f, recCaixa, recPerda };
+      const row = moneyOfFatura(f);
+      totalEmissao += row.emitido;
+      totalCaixa += row.caixa;
+      totalPerda += row.perda + row.iss;
+      totalProvisao += row.saldo;
+      return { f, recCaixa: row.caixa, recPerda: row.perda + row.iss };
     });
     sortedRows("contabilidade", rows, {
       nota: (r2) => `${r2.f.numero_nota} ${r2.f.numero_remessa} ${r2.f.numero_lote || ""}`,
@@ -45150,13 +45291,15 @@ This typically indicates that your device does not have a healthy Internet conne
     if (elPagLiq) elPagLiq.value = calc.pagLiquido.toFixed(2);
     if (glosaEl && document.activeElement !== glosaEl) glosaEl.value = calc.glosa.toFixed(2);
     setText("ml-sum-bruto", formatBRL(calc.valFaturado));
-    setText("ml-sum-retencoes", formatBRL(calc.pagLiquido + calc.complemento + calc.iss));
+    setText("ml-sum-retencoes", formatBRL(Math.max(0, calc.pagLiquido + calc.complemento - calc.totalVinculos)));
     setText("ml-sum-vinculos", formatBRL(calc.totalVinculos));
+    setText("ml-sum-iss", formatBRL(calc.iss));
     setText("ml-sum-liquido", formatBRL(calc.liquidoNf));
     if (!panel || panel.classList.contains("hidden")) {
       setText("ml-sum-bruto", formatBRL(valFaturado));
       setText("ml-sum-retencoes", formatBRL(0));
       setText("ml-sum-vinculos", formatBRL(0));
+      setText("ml-sum-iss", formatBRL(0));
       setText("ml-sum-liquido", formatBRL(valFaturado));
     }
   }
@@ -45304,6 +45447,7 @@ This typically indicates that your device does not have a healthy Internet conne
       const panel = $2("panel-multi-lote-emissao");
       if (convObj.multi_lote && panel && !panel.classList.contains("hidden")) {
         const glosaEl = document.getElementById("ml-glosa");
+        const totalVinculos = sumClass("ml-nf-valor") + sumClass("ml-rec-valor");
         const calc = calcularMultiLote({
           valFaturado: parseFloat(inputVal("ml-val-faturado")) || valTotal,
           pagNormal: parseFloat(inputVal("ml-pagamento-normal")) || 0,
@@ -45311,7 +45455,7 @@ This typically indicates that your device does not have a healthy Internet conne
           glosaOverride: glosaEl && glosaEl.value !== "" ? parseFloat(glosaEl.value) : null,
           complemento: parseFloat(inputVal("ml-complemento")) || 0,
           iss: parseFloat(inputVal("ml-iss")) || 0,
-          totalVinculos: sumClass("ml-nf-valor") + sumClass("ml-rec-valor")
+          totalVinculos
         });
         novaFat.valor_total = calc.valFaturado || valTotal;
         novaFat.detalhe_emissao = {
@@ -45323,25 +45467,28 @@ This typically indicates that your device does not have a healthy Internet conne
           iss: calc.iss,
           liquido_nf: calc.liquidoNf
         };
-        const caixa = Math.max(0, calc.pagLiquido + calc.complemento);
-        if (caixa > 0 || calc.glosa > 0) {
+        const caixaBruto = Math.max(0, calc.pagLiquido + calc.complemento);
+        const caixaNova = Math.max(0, Math.round((caixaBruto - totalVinculos + Number.EPSILON) * 100) / 100);
+        const maxGlosa = Math.max(0, Math.round((novaFat.valor_total - caixaNova - calc.iss + Number.EPSILON) * 100) / 100);
+        const glosaEmissao = Math.min(calc.glosa, maxGlosa);
+        if (caixaNova > 0 || glosaEmissao > 0) {
           const prazos = calcularPrazosTiss({ convenio: convObj, dataEmissao });
           novaFat.movimentacoes.push(
             emptyMovimentacao({
               id: uid2("MOV_ML"),
               identificador_bancario: "RATEIO-EMISSAO",
               data_movimentacao: dataEmissao,
-              valor_pago: caixa,
+              valor_pago: caixaNova,
               valor_bruto_lote: calc.valFaturado,
-              valor_glosado: calc.glosa,
-              valor_recursado: calc.glosa,
-              status_parcela: calc.glosa > 0 ? STATUS_SEM_RECURSO : "\u{1F7E2} LIQUIDADO",
-              motivo_glosa: calc.glosa > 0 ? "Glosa gerada no rateio multi-lote da NFS-e" : "",
-              protocolo_recurso: calc.glosa > 0 ? "SEM RECURSO" : "-",
+              valor_glosado: glosaEmissao,
+              valor_recursado: glosaEmissao,
+              status_parcela: glosaEmissao > 0 ? STATUS_SEM_RECURSO : "\u{1F7E2} LIQUIDADO",
+              motivo_glosa: glosaEmissao > 0 ? "Glosa gerada no rateio multi-lote da NFS-e" : "",
+              protocolo_recurso: glosaEmissao > 0 ? "SEM RECURSO" : "-",
               data_envio_recurso: "",
               data_limite_resposta: prazos.dataLimiteResposta,
               data_estimada_pagamento: prazos.dataEstimadaPagamento,
-              observacao_rateio: `Rateio na emiss\xE3o. ISS informado: ${formatBRL(calc.iss)} (reten\xE7\xE3o fiscal, n\xE3o entra em caixa).`
+              observacao_rateio: `Rateio na emiss\xE3o. ISS ${formatBRL(calc.iss)} (reten\xE7\xE3o, n\xE3o entra em caixa). V\xEDnculos ${formatBRL(totalVinculos)} alocados em NFs/recursos anteriores.`
             })
           );
         }
@@ -45374,11 +45521,14 @@ This typically indicates that your device does not have a healthy Internet conne
             const fatRecTarget = appData.faturas.find((f) => f.id === fatRecId);
             const movRecTarget = fatRecTarget?.movimentacoes.find((m2) => m2.id === movRecId);
             if (fatRecTarget && movRecTarget) {
-              const aplicado = Math.min(valorRecebido, movRecTarget.valor_recursado || 0);
-              movRecTarget.valor_pago = (movRecTarget.valor_pago || 0) + aplicado;
-              movRecTarget.valor_recursado = Math.max(0, (movRecTarget.valor_recursado || 0) - aplicado);
+              const aberto = valorRecursoEmAberto(movRecTarget);
+              const aplicado = Math.min(valorRecebido, aberto);
+              movRecTarget.valor_recursado = Math.max(0, aberto - aplicado);
               movRecTarget.valor_recuperado_recurso = (movRecTarget.valor_recuperado_recurso || 0) + aplicado;
-              if (movRecTarget.valor_recursado === 0) movRecTarget.status_parcela = "\u{1F7E2} LIQUIDADO";
+              if (movRecTarget.valor_recursado <= 9e-3) {
+                movRecTarget.valor_recursado = 0;
+                movRecTarget.status_parcela = "\u{1F7E2} LIQUIDADO";
+              }
               recalculateFaturaSaldo(fatRecTarget);
             }
           }
@@ -45439,11 +45589,31 @@ This typically indicates that your device does not have a healthy Internet conne
       if (editId) {
         const dep = appData.depositos.find((d) => d.id === editId);
         if (dep && isDepositoAberto(dep)) {
+          const rateado = valorRateadoDeposito(dep);
+          if (valor + 9e-3 < rateado) {
+            showToast(`O valor do TED n\xE3o pode ser menor que o j\xE1 rateado (${formatBRL(rateado)}).`);
+            return;
+          }
+          const tedAntes = dep.identificador_bancario;
           dep.convenio = convenio;
           dep.data_recebimento = dataRec;
           dep.valor = valor;
           dep.identificador_bancario = idBancario;
           dep.observacao = obs;
+          if (tedAntes !== idBancario) {
+            (dep.rateios || []).forEach((r2) => {
+              r2.ted = idBancario;
+            });
+            appData.faturas.forEach((f) => {
+              f.movimentacoes.forEach((m2) => {
+                if (m2.identificador_bancario === tedAntes) m2.identificador_bancario = idBancario;
+                (m2.historico_rateio || []).forEach((h) => {
+                  if (h.depositoId === dep.id) h.ted = idBancario;
+                });
+              });
+            });
+          }
+          sincronizarDeposito(dep);
         }
       } else {
         appData.depositos.push({
@@ -45717,9 +45887,11 @@ This typically indicates that your device does not have a healthy Internet conne
           criaGlosa: linha.criaGlosa,
           observacao: linha.observacao
         };
+        const movId = uid2("MOV");
+        lanc.movId = movId;
         fat.movimentacoes.push(
           emptyMovimentacao({
-            id: uid2("MOV"),
+            id: movId,
             identificador_bancario: dep.identificador_bancario,
             data_movimentacao: dep.data_recebimento,
             valor_pago: linha.valorPago,
@@ -45771,10 +45943,11 @@ This typically indicates that your device does not have a healthy Internet conne
         }
         recalculateFaturaSaldo(fat);
       });
-      const rateadoAntes = Math.round(((dep.valor || 0) - disponivel + Number.EPSILON) * 100) / 100;
+      const rateadoAntes = valorRateadoDeposito(dep);
       const novoRateado = Math.round((rateadoAntes + fechamento.total + Number.EPSILON) * 100) / 100;
       dep.valor_rateado = novoRateado;
       dep.status = statusDepositoAposRateio(fechamento.residual, novoRateado);
+      sincronizarDeposito(dep);
       const notas = [...new Set(nfAplicadas.map((l2) => appData.faturas.find((f) => f.id === l2.faturaId)?.numero_nota).filter(Boolean))];
       const prots = recAplicadas.map((l2) => {
         const fat = appData.faturas.find((f) => f.id === l2.faturaId);
@@ -45906,6 +46079,7 @@ This typically indicates that your device does not have a healthy Internet conne
       setInput("rec-fatura-id", fat.id);
       setInput("rec-mov-id", movTarget.id);
       setInput("rec-valor-pago-hidden", String(movTarget.valor_pago || 0));
+      setInput("rec-valor-recuperado-hidden", String(movTarget.valor_recuperado_recurso || 0));
       const summary = $2("rec-fatura-summary");
       if (summary) {
         summary.innerHTML = `<div class="flex justify-between items-center">
@@ -45951,6 +46125,7 @@ This typically indicates that your device does not have a healthy Internet conne
   }
   function atualizarCalculoRecursoDiretoV6() {
     const valorPago = parseFloat(inputVal("rec-valor-pago-hidden")) || 0;
+    const valorRecuperado = parseFloat(inputVal("rec-valor-recuperado-hidden")) || 0;
     const rawBruto = inputVal("rec-valor-bruto-lote");
     const rawAceito = inputVal("rec-valor-aceito");
     const mathBox = $2("rec-calc-breakdown");
@@ -45963,13 +46138,15 @@ This typically indicates that your device does not have a healthy Internet conne
     const calc = calcularRecursoGlosa({
       valorBruto: parseFloat(rawBruto) || 0,
       valorPago,
-      glosaAceita: rawAceito === "" ? 0 : parseFloat(rawAceito) || 0
+      glosaAceita: rawAceito === "" ? 0 : parseFloat(rawAceito) || 0,
+      valorRecuperado
     });
     setInput("rec-valor-recursado", calc.valorRecursado.toFixed(2));
     if (mathBox) {
       mathBox.innerHTML = `<div class="space-y-1 text-[11px]">
       <div class="flex justify-between text-slate-300"><span>Valor Bruto Lote:</span><span class="font-bold text-white">${formatBRL(calc.valorBruto)}</span></div>
       <div class="flex justify-between text-emerald-400"><span>(-) Valor Depositado:</span><span class="font-bold">-${formatBRL(calc.valorPago)}</span></div>
+      <div class="flex justify-between text-emerald-300"><span>(-) J\xE1 recuperado em recurso:</span><span class="font-bold">-${formatBRL(calc.valorRecuperado)}</span></div>
       <div class="flex justify-between text-rose-400"><span>(-) Glosa Aceita (Perda):</span><span class="font-bold">-${formatBRL(calc.glosaAceita)}</span></div>
       <div class="flex justify-between text-orange-400 font-extrabold border-t border-slate-700 pt-1"><span>(=) Valor a Recursar / Contestar:</span><span>${formatBRL(calc.valorRecursado)}</span></div>
     </div>`;
@@ -45989,7 +46166,8 @@ This typically indicates that your device does not have a healthy Internet conne
       const calc = calcularRecursoGlosa({
         valorBruto: parseFloat(inputVal("rec-valor-bruto-lote")) || 0,
         valorPago,
-        glosaAceita: parseFloat(inputVal("rec-valor-aceito")) || 0
+        glosaAceita: parseFloat(inputVal("rec-valor-aceito")) || 0,
+        valorRecuperado: movTarget.valor_recuperado_recurso || 0
       });
       let instancia = inputVal("rec-instancia");
       if (!convObj.replica_treplica && (instancia === "REPLICA" || instancia === "TREPLICA")) {
@@ -46011,7 +46189,7 @@ This typically indicates that your device does not have a healthy Internet conne
       if (!movTarget.data_envio_recurso || isSemRecurso(movTarget.status_parcela)) {
         movTarget.data_envio_recurso = todayISO();
       }
-      movTarget.status_parcela = statusParcelaFromInstancia(instancia, calc.valorRecursado);
+      movTarget.status_parcela = statusParcelaFromInstancia(instancia, calc.valorRecursado, movTarget.valor_recuperado_recurso || 0);
       recalculateFaturaSaldo(fat);
       audit(
         appData,
@@ -46369,27 +46547,14 @@ ${draft.corpo}`;
       alvo = faturaRemover?.numero_nota || rawId;
       resumo = `Excluiu a fatura ${alvo}.`;
       acao = "FATURA_EXCLUIDA";
-      if (faturaRemover) {
-        faturaRemover.movimentacoes.forEach((m2) => {
-          const dep = appData.depositos.find((d) => d.identificador_bancario === m2.identificador_bancario);
-          if (dep) dep.status = "Pendente";
-        });
-      }
+      if (faturaRemover) reverterRateiosDaFatura(appData, faturaRemover.id);
       appData.faturas = appData.faturas.filter((f) => f.id !== rawId);
     } else if (tipo === "DEPOSITO") {
       const depRemover = appData.depositos.find((d) => d.id === rawId);
       alvo = depRemover?.identificador_bancario || rawId;
       resumo = `Excluiu dep\xF3sito ${alvo}.`;
       acao = "DEPOSITO_EXCLUIDO";
-      if (depRemover && depRemover.status === "Conciliado") {
-        appData.faturas.forEach((f) => {
-          const indexMov = f.movimentacoes.findIndex((m2) => m2.identificador_bancario === depRemover.identificador_bancario);
-          if (indexMov !== -1) {
-            f.movimentacoes.splice(indexMov, 1);
-            recalculateFaturaSaldo(f);
-          }
-        });
-      }
+      if (depRemover) reverterDepositoCompleto(appData, depRemover);
       appData.depositos = appData.depositos.filter((d) => d.id !== rawId);
     } else if (tipo === "RECURSO") {
       const { faturaId, movId } = JSON.parse(rawId);
@@ -46398,11 +46563,7 @@ ${draft.corpo}`;
       resumo = `Excluiu lote/recurso da ${alvo}.`;
       acao = "RECURSO_EXCLUIDO";
       if (fat) {
-        const movRemover = fat.movimentacoes.find((m2) => m2.id === movId);
-        if (movRemover) {
-          const dep = appData.depositos.find((d) => d.identificador_bancario === movRemover.identificador_bancario);
-          if (dep) dep.status = "Pendente";
-        }
+        reverterRateiosDoMov(appData, faturaId, movId);
         fat.movimentacoes = fat.movimentacoes.filter((m2) => m2.id !== movId);
         recalculateFaturaSaldo(fat);
       }
@@ -46489,8 +46650,7 @@ ${draft.corpo}`;
       const movTarget = fat?.movimentacoes.find((m2) => m2.id === movId);
       if (!fat || !movTarget) return;
       if (resultado === "DEFERIDO") {
-        const recovered = movTarget.valor_recursado || 0;
-        movTarget.valor_pago = (movTarget.valor_pago || 0) + recovered;
+        const recovered = valorARecursar(movTarget) || movTarget.valor_recursado || 0;
         movTarget.valor_recuperado_recurso = (movTarget.valor_recuperado_recurso || 0) + recovered;
         movTarget.status_parcela = "\u{1F7E2} LIQUIDADO";
         movTarget.valor_recursado = 0;
