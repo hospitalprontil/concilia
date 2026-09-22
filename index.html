@@ -485,11 +485,6 @@ th[data-sort-col] {
         </button>
 
         <div class="pt-4 mt-4 border-t border-slate-800 space-y-1.5">
-          <button onclick="switchTab('ia-assistant')" id="nav-ia-assistant" class="nav-btn w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl bg-gradient-to-r from-purple-900/40 to-indigo-900/40 border border-purple-500/30 hover:border-purple-500/60 transition-all duration-200 text-purple-200">
-            <i class="fa-solid fa-wand-magic-sparkles w-5 text-center text-purple-400 flex-shrink-0"></i>
-            <span class="truncate">Assistente IA Gemini</span>
-          </button>
-
           <!-- Gestor RBAC Permissions Button -->
           <button id="btn-sidebar-rbac" onclick="abrirModalMatrizRBAC()" class="w-full flex items-center gap-3 px-3.5 py-2 rounded-xl text-xs bg-slate-800 hover:bg-slate-700 text-slate-300 transition-all duration-200 border border-slate-700">
             <i class="fa-solid fa-user-gear w-5 text-center text-indigo-400 flex-shrink-0"></i>
@@ -564,6 +559,7 @@ th[data-sort-col] {
               <h3 class="font-bold text-lg">Fila de Alertas — recuperação de caixa</h3>
               <p class="text-xs text-slate-300 mt-0.5">Ordenados pelo risco de perder dinheiro recuperável. Clique no card para ir à aba já filtrada.</p>
             </div>
+            <span class="ia-slot ml-auto" data-ia="alertas" data-ia-tone="dark"></span>
           </div>
           <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 w-full md:w-auto">
             <div class="bg-white/10 border border-white/10 rounded-xl px-3 py-2 text-center">
@@ -652,6 +648,7 @@ th[data-sort-col] {
           <button type="button" onclick="limparFiltros('dashboard')" class="text-xs font-semibold text-slate-500 hover:text-indigo-800 hover:bg-slate-100 px-3 py-2 rounded-xl whitespace-nowrap self-end lg:self-center">
             <i class="fa-solid fa-filter-circle-xmark mr-1"></i> Limpar filtros
           </button>
+          <span class="ia-slot self-end lg:self-center" data-ia="dashboard"></span>
         </div>
 
         <!-- 8 KPI Cards Grid -->
@@ -782,9 +779,10 @@ th[data-sort-col] {
       <section id="view-financeiro" class="tab-content hidden space-y-6">
         <div class="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-sm flex flex-col md:flex-row justify-between items-center gap-4">
           <div class="flex flex-wrap items-center gap-3 w-full md:w-auto">
-            <div class="relative flex-1 md:w-64">
+            <div class="relative flex-1 md:w-72">
               <i class="fa-solid fa-magnifying-glass absolute left-3 top-2.5 text-slate-400 text-xs"></i>
-              <input type="text" id="filter-financeiro-search" onkeyup="renderFinanceiroTable()" placeholder="Buscar Nota, Remessa, Lote..." class="w-full pl-9 pr-3 py-2 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:outline-none">
+              <input type="text" id="filter-financeiro-search" data-ia-search="busca_financeiro" onkeyup="renderFinanceiroTable()" placeholder="Buscar Nota, Remessa, Lote..." class="w-full pl-9 pr-10 py-2 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:outline-none">
+              <span class="ia-slot absolute right-1 top-1/2 -translate-y-1/2" data-ia="busca_financeiro" data-ia-tone="search"></span>
             </div>
             <select id="filter-financeiro-convenio" onchange="renderFinanceiroTable()" class="py-2 px-3 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:outline-none">
               <option value="">Todos os Convênios</option>
@@ -807,6 +805,7 @@ th[data-sort-col] {
             <button type="button" onclick="limparFiltros('financeiro')" class="font-semibold text-slate-500 hover:text-indigo-700 hover:bg-slate-100 px-2.5 py-1.5 rounded-xl">
               <i class="fa-solid fa-filter-circle-xmark mr-1"></i> Limpar filtros
             </button>
+            <span class="ia-slot" data-ia="financeiro"></span>
           </div>
         </div>
 
@@ -833,15 +832,19 @@ th[data-sort-col] {
 
       <!-- VIEW: RASTREIO DE NOTA -->
       <section id="view-rastreio" class="tab-content hidden space-y-6">
-        <div class="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm">
-          <h3 class="font-bold text-slate-800 text-sm">Rastreio de Nota</h3>
-          <p class="text-xs text-slate-500 mt-0.5">Todas as NFS-e emitidas e o dossiê completo: emissão, créditos, rateios, recursos, cobrança e baixas.</p>
+        <div class="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm flex items-start justify-between gap-3">
+          <div>
+            <h3 class="font-bold text-slate-800 text-sm">Rastreio de Nota</h3>
+            <p class="text-xs text-slate-500 mt-0.5">Todas as NFS-e emitidas e o dossiê completo: emissão, créditos, rateios, recursos, cobrança e baixas.</p>
+          </div>
+          <span class="ia-slot" data-ia="rastreio"></span>
         </div>
         <div class="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-sm flex flex-col md:flex-row justify-between items-center gap-4">
           <div class="flex flex-wrap items-center gap-3 w-full md:w-auto">
-            <div class="relative flex-1 md:w-64">
+            <div class="relative flex-1 md:w-72">
               <i class="fa-solid fa-magnifying-glass absolute left-3 top-2.5 text-slate-400 text-xs"></i>
-              <input type="text" id="filter-rastreio-search" oninput="renderRastreioTable()" placeholder="Buscar nota, lote, TED, protocolo..." class="w-full pl-9 pr-3 py-2 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:outline-none">
+              <input type="text" id="filter-rastreio-search" data-ia-search="busca_rastreio" oninput="renderRastreioTable()" placeholder="Buscar nota, lote, TED, protocolo..." class="w-full pl-9 pr-10 py-2 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:outline-none">
+              <span class="ia-slot absolute right-1 top-1/2 -translate-y-1/2" data-ia="busca_rastreio" data-ia-tone="search"></span>
             </div>
             <select id="filter-rastreio-convenio" onchange="renderRastreioTable()" class="py-2 px-3 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:outline-none">
               <option value="">Todos os Convênios</option>
@@ -897,15 +900,19 @@ th[data-sort-col] {
       </section>
 
       <section id="view-pagamentos" class="tab-content hidden space-y-6">
-        <div class="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm">
-          <h3 class="font-bold text-slate-800 text-sm">Rastreio de Pagamento</h3>
-          <p class="text-xs text-slate-500 mt-0.5">Clique no TED e veja, de forma simples, para onde foi cada real: parte de NF, NF integral, recurso de glosa ou saldo ainda na triagem.</p>
+        <div class="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm flex items-start justify-between gap-3">
+          <div>
+            <h3 class="font-bold text-slate-800 text-sm">Rastreio de Pagamento</h3>
+            <p class="text-xs text-slate-500 mt-0.5">Clique no TED e veja, de forma simples, para onde foi cada real: parte de NF, NF integral, recurso de glosa ou saldo ainda na triagem.</p>
+          </div>
+          <span class="ia-slot" data-ia="pagamentos"></span>
         </div>
         <div class="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-sm flex flex-col md:flex-row justify-between items-center gap-4">
           <div class="flex flex-wrap items-center gap-3 w-full md:w-auto">
-            <div class="relative flex-1 md:w-64">
+            <div class="relative flex-1 md:w-72">
               <i class="fa-solid fa-magnifying-glass absolute left-3 top-2.5 text-slate-400 text-xs"></i>
-              <input type="text" id="filter-pagamentos-search" oninput="renderPagamentosTable()" placeholder="Buscar TED, nota, protocolo, observação..." class="w-full pl-9 pr-3 py-2 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:outline-none">
+              <input type="text" id="filter-pagamentos-search" data-ia-search="busca_pagamentos" oninput="renderPagamentosTable()" placeholder="Buscar TED, nota, protocolo, observação..." class="w-full pl-9 pr-10 py-2 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:outline-none">
+              <span class="ia-slot absolute right-1 top-1/2 -translate-y-1/2" data-ia="busca_pagamentos" data-ia-tone="search"></span>
             </div>
             <select id="filter-pagamentos-convenio" onchange="renderPagamentosTable()" class="py-2 px-3 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:outline-none">
               <option value="">Todos os Convênios</option>
@@ -967,13 +974,15 @@ th[data-sort-col] {
               <p class="text-xs text-amber-800 mt-0.5">O Faturamento apenas vincula à Nota Mãe e abate o recebido. Toda divergência entra automaticamente em Recursos de Glosa.</p>
             </div>
           </div>
+          <span class="ia-slot" data-ia="triagem"></span>
         </div>
 
         <div class="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-sm flex flex-col md:flex-row justify-between items-center gap-4">
           <div class="flex flex-wrap items-center gap-3 w-full md:w-auto">
-            <div class="relative flex-1 md:w-64">
+            <div class="relative flex-1 md:w-72">
               <i class="fa-solid fa-magnifying-glass absolute left-3 top-2.5 text-slate-400 text-xs"></i>
-              <input type="text" id="filter-triagem-search" oninput="renderTriagemTable()" placeholder="Buscar TED, convênio, observação..." class="w-full pl-9 pr-3 py-2 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:outline-none">
+              <input type="text" id="filter-triagem-search" data-ia-search="busca_triagem" oninput="renderTriagemTable()" placeholder="Buscar TED, convênio, observação..." class="w-full pl-9 pr-10 py-2 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:outline-none">
+              <span class="ia-slot absolute right-1 top-1/2 -translate-y-1/2" data-ia="busca_triagem" data-ia-tone="search"></span>
             </div>
             <select id="filter-triagem-convenio" onchange="renderTriagemTable()" class="py-2 px-3 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:outline-none">
               <option value="">Todos os Convênios</option>
@@ -1038,6 +1047,7 @@ th[data-sort-col] {
             <h3 class="font-bold text-slate-800 text-sm">Gestão de Glosas e Defesas de Recursos TISS (Auditoria)</h3>
             <p class="text-xs text-slate-500 mt-0.5">Divergências identificadas entram aqui automaticamente. A Auditoria apura a perda aceita e registra o protocolo TISS, Réplicas e Tréplicas.</p>
           </div>
+          <span class="ia-slot" data-ia="recursos"></span>
         </div>
 
         <!-- Guia Expansível de Categorias de Glosa -->
@@ -1072,9 +1082,10 @@ th[data-sort-col] {
 
         <div class="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-sm flex flex-col md:flex-row justify-between items-center gap-4">
           <div class="flex flex-wrap items-center gap-3 w-full md:w-auto">
-            <div class="relative flex-1 md:w-64">
+            <div class="relative flex-1 md:w-72">
               <i class="fa-solid fa-magnifying-glass absolute left-3 top-2.5 text-slate-400 text-xs"></i>
-              <input type="text" id="filter-recursos-search" oninput="renderRecursosTable()" placeholder="Buscar nota, protocolo, lote, motivo..." class="w-full pl-9 pr-3 py-2 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:outline-none">
+              <input type="text" id="filter-recursos-search" data-ia-search="busca_recursos" oninput="renderRecursosTable()" placeholder="Buscar nota, protocolo, lote, motivo..." class="w-full pl-9 pr-10 py-2 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:outline-none">
+              <span class="ia-slot absolute right-1 top-1/2 -translate-y-1/2" data-ia="busca_recursos" data-ia-tone="search"></span>
             </div>
             <select id="filter-recursos-convenio" onchange="renderRecursosTable()" class="py-2 px-3 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:outline-none">
               <option value="">Todos os Convênios</option>
@@ -1133,16 +1144,22 @@ th[data-sort-col] {
       <!-- VIEW: CONCILIACAO TARDIA -->
       <section id="view-conciliacao" class="tab-content hidden space-y-6">
         <div class="bg-indigo-900 text-white p-6 rounded-2xl shadow-md space-y-3">
-          <div class="flex items-center gap-3">
+          <div class="flex items-center justify-between gap-3">
+            <div class="flex items-center gap-3">
             <div class="p-2.5 bg-indigo-700/80 rounded-xl flex-shrink-0"><i class="fa-solid fa-clock-rotate-left text-xl text-indigo-200"></i></div>
             <div>
               <h3 class="font-bold text-base">Módulo de Conciliação Tardia de Recursos</h3>
               <p class="text-xs text-indigo-200">Quando operadoras pagam recursos após meses, use este localizador para dar a baixa final.</p>
             </div>
+            </div>
+            <span class="ia-slot" data-ia="conciliacao" data-ia-tone="dark"></span>
           </div>
           
           <div class="grid grid-cols-1 md:grid-cols-4 gap-3 pt-2">
-            <input type="text" id="search-tardio-query" placeholder="Número da nota, protocolo, lote ou remessa..." class="py-2.5 px-3.5 bg-indigo-950/80 border border-indigo-700 text-white placeholder-indigo-400 text-xs rounded-xl focus:outline-none">
+            <div class="relative">
+              <input type="text" id="search-tardio-query" data-ia-search="busca_conciliacao" placeholder="Número da nota, protocolo, lote ou remessa..." class="w-full py-2.5 pl-3.5 pr-11 bg-indigo-950/80 border border-indigo-700 text-white placeholder-indigo-400 text-xs rounded-xl focus:outline-none">
+              <span class="ia-slot absolute right-1.5 top-1/2 -translate-y-1/2" data-ia="busca_conciliacao" data-ia-tone="search-dark"></span>
+            </div>
             <select id="search-tardio-convenio" class="py-2.5 px-3.5 bg-indigo-950/80 border border-indigo-700 text-white text-xs rounded-xl focus:outline-none">
               <option value="">Todos os Convênios</option>
             </select>
@@ -1185,13 +1202,15 @@ th[data-sort-col] {
               <p class="text-xs text-rose-200">Controle rigoroso de recursos, réplicas e tréplicas que ultrapassaram a data limite de resposta ou a data estimada de pagamento.</p>
             </div>
           </div>
+          <span class="ia-slot" data-ia="cobranca" data-ia-tone="dark"></span>
         </div>
 
         <div class="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-sm flex flex-col md:flex-row justify-between items-center gap-4">
           <div class="flex flex-wrap items-center gap-3 w-full md:w-auto">
-            <div class="relative flex-1 md:w-64">
+            <div class="relative flex-1 md:w-72">
               <i class="fa-solid fa-magnifying-glass absolute left-3 top-2.5 text-slate-400 text-xs"></i>
-              <input type="text" id="filter-cobranca-search" oninput="renderCobrancaTable()" placeholder="Buscar NFS-e, protocolo, lote..." class="w-full pl-9 pr-3 py-2 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:outline-none">
+              <input type="text" id="filter-cobranca-search" data-ia-search="busca_cobranca" oninput="renderCobrancaTable()" placeholder="Buscar NFS-e, protocolo, lote..." class="w-full pl-9 pr-10 py-2 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:outline-none">
+              <span class="ia-slot absolute right-1 top-1/2 -translate-y-1/2" data-ia="busca_cobranca" data-ia-tone="search"></span>
             </div>
             <select id="filter-cobranca-convenio" onchange="renderCobrancaTable()" class="py-2 px-3 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:outline-none">
               <option value="">Todos os Convênios</option>
@@ -1247,12 +1266,15 @@ th[data-sort-col] {
       <!-- VIEW: MÓDULO 7 - CONTABILIDADE & DRE FISCAL -->
       <section id="view-contabilidade" class="tab-content hidden space-y-6">
         <div class="bg-slate-900 text-white p-6 rounded-2xl shadow-xl space-y-4">
+          <div class="flex items-start justify-between gap-3">
           <div class="flex items-center gap-3">
             <div class="p-3 bg-emerald-500/20 border border-emerald-400/30 rounded-2xl text-emerald-400"><i class="fa-solid fa-calculator text-2xl"></i></div>
             <div>
               <h3 class="font-bold text-lg">Contabilidade & DRE Fiscal (Razão de Provisões)</h3>
               <p class="text-xs text-slate-300">Visão consolidada de receitas emitidas em NFS-e, dinheiro entrado no caixa, provisões a receber e baixas de perdas (PDD).</p>
             </div>
+          </div>
+          <span class="ia-slot" data-ia="contabilidade" data-ia-tone="dark"></span>
           </div>
 
           <!-- Contabilidade KPIs Row -->
@@ -1278,9 +1300,10 @@ th[data-sort-col] {
 
         <div class="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-sm flex flex-col md:flex-row justify-between items-center gap-4">
           <div class="flex flex-wrap items-center gap-3 w-full md:w-auto">
-            <div class="relative flex-1 md:w-64">
+            <div class="relative flex-1 md:w-72">
               <i class="fa-solid fa-magnifying-glass absolute left-3 top-2.5 text-slate-400 text-xs"></i>
-              <input type="text" id="filter-contabilidade-search" oninput="renderContabilidadeTable()" placeholder="Buscar nota, remessa, lote..." class="w-full pl-9 pr-3 py-2 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:outline-none">
+              <input type="text" id="filter-contabilidade-search" data-ia-search="busca_contabilidade" oninput="renderContabilidadeTable()" placeholder="Buscar nota, remessa, lote..." class="w-full pl-9 pr-10 py-2 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:outline-none">
+              <span class="ia-slot absolute right-1 top-1/2 -translate-y-1/2" data-ia="busca_contabilidade" data-ia-tone="search"></span>
             </div>
             <select id="filter-contabilidade-convenio" onchange="renderContabilidadeTable()" class="py-2 px-3 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:outline-none">
               <option value="">Todos os Convênios</option>
@@ -1356,7 +1379,10 @@ th[data-sort-col] {
           <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2.5 flex-1">
             <div>
               <label class="block text-[10px] font-bold text-slate-500 uppercase mb-0.5">Busca</label>
-              <input type="text" id="filter-logs-search" oninput="renderLogsTable()" placeholder="Usuário, nota, ação, detalhe..." class="w-full py-1.5 px-2.5 text-xs bg-slate-50 border border-slate-200 rounded-xl font-semibold text-slate-800">
+              <div class="relative">
+                <input type="text" id="filter-logs-search" data-ia-search="busca_logs" oninput="renderLogsTable()" placeholder="Usuário, nota, ação, detalhe..." class="w-full py-1.5 pl-2.5 pr-10 text-xs bg-slate-50 border border-slate-200 rounded-xl font-semibold text-slate-800">
+                <span class="ia-slot absolute right-1 top-1/2 -translate-y-1/2" data-ia="busca_logs" data-ia-tone="search"></span>
+              </div>
             </div>
             <div>
               <label class="block text-[10px] font-bold text-slate-500 uppercase mb-0.5">Ação</label>
@@ -1404,69 +1430,6 @@ th[data-sort-col] {
               </thead>
               <tbody id="table-logs-lista" class="divide-y divide-slate-100 font-medium"></tbody>
             </table>
-          </div>
-        </div>
-      </section>
-
-      <!-- VIEW: ASSISTENTE IA GEMINI -->
-      <section id="view-ia-assistant" class="tab-content hidden space-y-6">
-        <div class="bg-gradient-to-r from-purple-900 via-indigo-900 to-slate-900 text-white p-6 rounded-2xl shadow-xl space-y-4">
-          <div class="flex items-center gap-3">
-            <div class="p-3 bg-purple-500/20 border border-purple-400/30 rounded-2xl text-purple-300 flex-shrink-0"><i class="fa-solid fa-wand-magic-sparkles text-2xl"></i></div>
-            <div>
-              <h3 class="font-bold text-lg">Inteligência Artificial Hospitalar Gemini</h3>
-              <p class="text-xs text-purple-200">Fase 1: motor determinístico. A API Gemini entra na fase 2 (minuta real, cobrança, rateio sugerido).</p>
-            </div>
-          </div>
-        </div>
-
-        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <div class="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-sm space-y-4 flex flex-col justify-between">
-            <div>
-              <div class="flex items-center gap-2 text-purple-700 font-bold text-sm mb-2">
-                <i class="fa-solid fa-brain"></i>
-                <h4>Smart Matching: Decifrador de Pagamentos Picados</h4>
-              </div>
-              <p class="text-xs text-slate-600 mb-4">Selecione um depósito do extrato para estimar a probabilidade de correspondência.</p>
-
-              <div class="space-y-3">
-                <div>
-                  <label class="block text-xs font-semibold text-slate-700 mb-1">Selecione o Depósito Semanal:</label>
-                  <select id="ia-select-deposito" class="w-full p-2.5 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:outline-none"></select>
-                </div>
-
-                <button onclick="executarIaSmartMatch()" class="w-full py-2.5 bg-gradient-to-r from-purple-600 to-indigo-600 text-white font-bold text-xs rounded-xl shadow-md transition flex items-center justify-center gap-2">
-                  <i class="fa-solid fa-wand-magic-sparkles"></i> Analisar com IA Gemini
-                </button>
-              </div>
-            </div>
-
-            <div id="ia-match-result" class="p-4 bg-purple-50 border border-purple-200 rounded-xl text-xs space-y-2 hidden"></div>
-          </div>
-
-          <div class="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-sm space-y-4">
-            <div class="flex items-center gap-2 text-indigo-700 font-bold text-sm mb-2">
-              <i class="fa-solid fa-file-pen"></i>
-              <h4>Gerador de Minuta de Recurso Médico / TISS</h4>
-            </div>
-
-            <div class="space-y-3">
-              <div>
-                <label class="block text-xs font-semibold text-slate-700 mb-1">Motivo da Glosa do Convênio:</label>
-                <input type="text" id="ia-motivo-glosa" placeholder="Ex: Ausência de justificativa cirúrgica para OPME" class="w-full p-2.5 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:outline-none">
-              </div>
-
-              <div>
-                <label class="block text-xs font-semibold text-slate-700 mb-1">Procedimento / Guia:</label>
-                <input type="text" id="ia-procedimento" placeholder="Ex: Artroplastia Total de Quadril - Guia TISS 88219" class="w-full p-2.5 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:outline-none">
-              </div>
-
-              <button onclick="gerarMinutaIa()" class="w-full py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs rounded-xl shadow-md transition flex items-center justify-center gap-2">
-                <i class="fa-solid fa-file-signature"></i> Redigir Minuta
-              </button>
-
-              <div id="ia-minuta-output" class="p-3 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-700 font-mono whitespace-pre-wrap max-h-48 overflow-y-auto custom-scrollbar hidden"></div>
-            </div>
           </div>
         </div>
       </section>
@@ -1671,7 +1634,10 @@ th[data-sort-col] {
     <div class="bg-white w-full max-w-lg rounded-2xl shadow-2xl border border-slate-100 overflow-hidden flex flex-col">
       <div class="p-5 bg-emerald-800 text-white flex justify-between items-center">
         <h3 id="lbl-modal-deposito-title" class="font-bold text-sm flex items-center gap-2"><i class="fa-solid fa-money-bill-transfer"></i> Lançar Depósito Bancário (Triagem)</h3>
-        <button onclick="closeModal('modal-novo-deposito')" class="text-emerald-200 hover:text-white"><i class="fa-solid fa-xmark text-lg"></i></button>
+        <div class="flex items-center gap-2">
+          <span class="ia-slot" data-ia="deposito" data-ia-tone="dark"></span>
+          <button onclick="closeModal('modal-novo-deposito')" class="text-emerald-200 hover:text-white"><i class="fa-solid fa-xmark text-lg"></i></button>
+        </div>
       </div>
       <form id="form-novo-deposito" onsubmit="salvarNovoDeposito(event)" class="p-6 space-y-4 text-xs">
         <input type="hidden" id="dep-edit-id" value="">
@@ -1740,7 +1706,10 @@ th[data-sort-col] {
           <h3 class="font-bold text-sm flex items-center gap-2"><i class="fa-solid fa-file-invoice-dollar"></i> Cobrar convênio</h3>
           <p id="cob-modal-sub" class="text-[11px] text-rose-200 mt-0.5">Rascunho pré-preenchido com a nota, o recurso e os contatos anteriores.</p>
         </div>
-        <button onclick="closeModal('modal-log-cobranca')" class="text-rose-200 hover:text-white"><i class="fa-solid fa-xmark"></i></button>
+        <div class="flex items-center gap-2">
+          <span class="ia-slot" data-ia="minuta_cobranca" data-ia-tone="dark"></span>
+          <button onclick="closeModal('modal-log-cobranca')" class="text-rose-200 hover:text-white"><i class="fa-solid fa-xmark"></i></button>
+        </div>
       </div>
       <form id="form-log-cobranca" onsubmit="salvarOcorrenciaCobranca(event)" class="p-5 space-y-3 text-xs overflow-y-auto custom-scrollbar flex-1">
         <input type="hidden" id="cob-fat-id">
@@ -1810,7 +1779,10 @@ th[data-sort-col] {
           <h3 id="lbl-modal-nova-fatura-title" class="font-bold text-sm flex items-center gap-2"><i class="fa-solid fa-file-circle-plus text-indigo-400"></i> Cadastrar Nova Fatura / NFS-e</h3>
           <p class="text-[11px] text-slate-400">Emissão com suporte a multi-lotes, rateios e deduções de múltiplos recursos anteriores.</p>
         </div>
-        <button onclick="closeModal('modal-nova-fatura')" class="text-slate-400 hover:text-white"><i class="fa-solid fa-xmark text-lg"></i></button>
+        <div class="flex items-center gap-2">
+          <span class="ia-slot" data-ia="fatura" data-ia-tone="dark"></span>
+          <button onclick="closeModal('modal-nova-fatura')" class="text-slate-400 hover:text-white"><i class="fa-solid fa-xmark text-lg"></i></button>
+        </div>
       </div>
 
       <form id="form-nova-fatura" onsubmit="salvarNovaFatura(event)" class="p-6 space-y-4 text-xs overflow-y-auto custom-scrollbar flex-1">
@@ -1949,7 +1921,10 @@ th[data-sort-col] {
     <div class="bg-white w-full max-w-2xl rounded-2xl shadow-2xl border border-slate-100 overflow-hidden max-h-[90vh] flex flex-col">
       <div class="p-5 bg-indigo-900 text-white flex justify-between items-center flex-shrink-0">
         <h3 class="font-bold text-sm flex items-center gap-2"><i class="fa-solid fa-diagram-project"></i> Ratear crédito do extrato</h3>
-        <button onclick="closeModal('modal-vincular-deposito')" class="text-indigo-300 hover:text-white"><i class="fa-solid fa-xmark"></i></button>
+        <div class="flex items-center gap-2">
+          <span class="ia-slot" data-ia="vinculo" data-ia-tone="dark"></span>
+          <button onclick="closeModal('modal-vincular-deposito')" class="text-indigo-300 hover:text-white"><i class="fa-solid fa-xmark"></i></button>
+        </div>
       </div>
       <div class="p-6 space-y-4 text-xs overflow-y-auto custom-scrollbar flex-1">
         
@@ -1993,7 +1968,10 @@ th[data-sort-col] {
     <div class="bg-white w-full max-w-lg rounded-2xl shadow-2xl border border-slate-100 overflow-hidden">
       <div class="p-5 bg-orange-700 text-white flex justify-between items-center">
         <h3 class="font-bold text-sm flex items-center gap-2"><i class="fa-solid fa-scale-unbalanced"></i> Divergência no pagamento do recurso</h3>
-        <button type="button" onclick="adiarDivergenciaRecurso()" class="text-orange-200 hover:text-white"><i class="fa-solid fa-xmark"></i></button>
+        <div class="flex items-center gap-2">
+          <span class="ia-slot" data-ia="divergencia" data-ia-tone="dark"></span>
+          <button type="button" onclick="adiarDivergenciaRecurso()" class="text-orange-200 hover:text-white"><i class="fa-solid fa-xmark"></i></button>
+        </div>
       </div>
       <div class="p-6 space-y-4 text-xs">
         <input type="hidden" id="div-rec-fatura-id">
@@ -2027,7 +2005,10 @@ th[data-sort-col] {
     <div class="bg-white w-full max-w-lg rounded-2xl shadow-2xl border border-slate-100 overflow-hidden max-h-[90vh] flex flex-col">
       <div class="p-5 bg-orange-600 text-white flex justify-between items-center flex-shrink-0">
         <h3 class="font-bold text-sm flex items-center gap-2"><i class="fa-solid fa-shield-cat"></i> Analisar Glosa / Contestação TISS (Auditoria)</h3>
-        <button onclick="closeModal('modal-abrir-recurso')" class="text-orange-200 hover:text-white"><i class="fa-solid fa-xmark"></i></button>
+        <div class="flex items-center gap-2">
+          <span class="ia-slot" data-ia="glosa" data-ia-tone="dark"></span>
+          <button onclick="closeModal('modal-abrir-recurso')" class="text-orange-200 hover:text-white"><i class="fa-solid fa-xmark"></i></button>
+        </div>
       </div>
       <form id="form-abrir-recurso" onsubmit="salvarRecursoGlosa(event)" class="p-6 space-y-4 text-xs overflow-y-auto custom-scrollbar flex-1">
         <input type="hidden" id="rec-fatura-id">
@@ -2120,6 +2101,27 @@ th[data-sort-col] {
         <p id="notif-message" class="text-xs text-slate-500 mt-1"></p>
       </div>
       <button onclick="closeModal('modal-notificacao')" class="w-full py-2 bg-slate-900 text-white font-bold rounded-xl text-xs">Entendido</button>
+    </div>
+  </div>
+
+  <div id="modal-ia-placeholder" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[70] flex items-center justify-center hidden p-4">
+    <div class="bg-white w-full max-w-md rounded-2xl shadow-2xl border border-slate-100 overflow-hidden">
+      <div class="p-5 bg-indigo-900 text-white flex justify-between items-center">
+        <h3 class="font-bold text-sm flex items-center gap-2">
+          <span class="w-8 h-8 rounded-full bg-white/15 flex items-center justify-center"><i class="fa-solid fa-wand-magic-sparkles text-xs"></i></span>
+          Concili.a IA
+        </h3>
+        <button type="button" onclick="closeModal('modal-ia-placeholder')" class="text-indigo-200 hover:text-white"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <div class="p-6 space-y-3">
+        <p id="ia-ph-contexto" class="font-bold text-slate-800 text-sm">Análise desta tela</p>
+        <p class="text-sm text-slate-700">Funcionalidade ainda não ativada.</p>
+        <p id="ia-ph-query" class="hidden text-xs text-indigo-700 bg-indigo-50 border border-indigo-100 rounded-xl px-3 py-2"></p>
+        <p id="ia-ph-futuro" class="text-xs text-slate-500 leading-relaxed">Quando a fase 2 ligar, a IA gera a análise específica desta tela.</p>
+      </div>
+      <div class="px-6 pb-5">
+        <button type="button" onclick="closeModal('modal-ia-placeholder')" class="w-full py-2.5 bg-slate-900 text-white font-bold rounded-xl text-xs">Entendi</button>
+      </div>
     </div>
   </div>
 
@@ -18023,54 +18025,6 @@ Pode nos retornar com o posicionamento, por favor?`;
       resposta7dCount: resposta7dN,
       inadimplenciaRecursoCount: respostaVencidaN + creditoVencidoN
     };
-  }
-  function smartMatch(deposito, faturas) {
-    const candidatas = faturas.filter((f) => f.convenio === deposito.convenio && (f.valor_saldo || 0) > 0);
-    if (!candidatas.length) return null;
-    let best = null;
-    for (const f of candidatas) {
-      const saldo = f.valor_saldo || 0;
-      const dep = valorDisponivelDeposito(deposito);
-      const ratio = saldo > 0 ? dep / saldo : 0;
-      const delta = Math.abs(saldo - dep);
-      const pctDelta = saldo > 0 ? delta / saldo : 1;
-      let score = 40;
-      let motivo = "Mesmo conv\xEAnio e saldo em aberto.";
-      if (delta < 9e-3) {
-        score = 98;
-        motivo = "Valor do cr\xE9dito id\xEAntico ao saldo da nota.";
-      } else if (pctDelta <= 0.05) {
-        score = 90;
-        motivo = "Valor do cr\xE9dito dentro de 5% do saldo.";
-      } else if (pctDelta <= 0.2) {
-        score = 78;
-        motivo = "Valor do cr\xE9dito pr\xF3ximo do saldo (at\xE9 20%).";
-      } else if (ratio > 0 && ratio < 1) {
-        score = 62;
-        motivo = "Cr\xE9dito parcial compat\xEDvel com rateio / sub-lote.";
-      }
-      const idHint = (deposito.identificador_bancario || "").toLowerCase();
-      const blob = `${f.numero_nota} ${f.numero_lote} ${f.numero_remessa}`.toLowerCase();
-      if (idHint && blob.includes(idHint.replace(/ted-?/i, ""))) {
-        score = Math.min(99, score + 8);
-        motivo += " Identificador banc\xE1rio sugere o mesmo lote.";
-      }
-      if (f.data_previsao_pagamento && deposito.data_recebimento) {
-        const gap = Math.abs(diffDaysISO(f.data_previsao_pagamento, deposito.data_recebimento));
-        if (gap <= 7) score = Math.min(99, score + 5);
-      }
-      if (!best || score > best.score) {
-        best = {
-          depositoId: deposito.id,
-          faturaId: f.id,
-          faturaNota: f.numero_nota,
-          saldo,
-          score,
-          motivo
-        };
-      }
-    }
-    return best;
   }
   function cloneData(value) {
     return JSON.parse(JSON.stringify(value));
@@ -43901,6 +43855,96 @@ This typically indicates that your device does not have a healthy Internet conne
   function closeModal(id) {
     $2(id)?.classList.add("hidden");
   }
+  var IA_CONTEXTOS = {
+    alertas: { titulo: "Fila de alertas", futuro: "Priorizar os riscos de caixa e explicar, em linguagem de diretoria, o que atacar primeiro." },
+    dashboard: { titulo: "Dashboard", futuro: "Leitura executiva: emitido vs. caixa, glosa e o que ainda est\xE1 em disputa." },
+    financeiro: { titulo: "Financeiro / emiss\xE3o", futuro: "Checar inconsist\xEAncias na NFS-e e sugerir o detalhamento multi-lote." },
+    rastreio: { titulo: "Rastreio de nota", futuro: "Relat\xF3rio da nota: emiss\xE3o, cr\xE9ditos, rateios, recursos e o que falta receber." },
+    pagamentos: { titulo: "Rastreio de pagamento", futuro: "Explicar para onde foi cada real do TED, em linguagem simples." },
+    triagem: { titulo: "Triagem semanal", futuro: "Sugerir o rateio do cr\xE9dito: NF anterior, NF atual, recurso e o que fica na triagem." },
+    vinculo: { titulo: "Rateio do cr\xE9dito", futuro: "Pr\xE9-preencher as linhas de NF e recurso com 2 ou 3 cen\xE1rios ranqueados. O faturista confirma." },
+    recursos: { titulo: "Recursos de glosa", futuro: "Classificar a glosa e redigir a minuta TISS com o hist\xF3rico da nota." },
+    glosa: { titulo: "An\xE1lise de glosa", futuro: "Minuta do recurso / r\xE9plica j\xE1 no tom do conv\xEAnio, pronta para revisar e protocolar." },
+    divergencia: { titulo: "Diverg\xEAncia do recurso", futuro: "Sugerir acatar, contestar ou subir r\xE9plica, conforme o cadastro do plano." },
+    conciliacao: { titulo: "Concilia\xE7\xE3o tardia", futuro: "Localizar o t\xEDtulo antigo e sugerir a baixa com o cr\xE9dito que acabou de entrar." },
+    cobranca: { titulo: "Gest\xE3o de cobran\xE7a", futuro: "Fila do dia e o tom de cada contato, por conv\xEAnio." },
+    minuta_cobranca: { titulo: "Minuta de cobran\xE7a", futuro: "E-mail ou WhatsApp pronto, com hist\xF3rico da nota, recursos e contatos anteriores." },
+    contabilidade: { titulo: "Contabilidade & DRE", futuro: "Coment\xE1rio fiscal: emitido = caixa + perda + ISS + saldo em disputa." },
+    deposito: { titulo: "Lan\xE7amento de cr\xE9dito", futuro: "Ler a observa\xE7\xE3o do TED e sugerir o conv\xEAnio e as notas candidatas." },
+    fatura: { titulo: "Emiss\xE3o de NFS-e", futuro: "Detectar rateio na emiss\xE3o (NF anterior / recurso) a partir do valor e do conv\xEAnio." },
+    busca_financeiro: { titulo: "Busca no financeiro", futuro: "Resumo da NFS-e, lote e o que ainda est\xE1 em aberto a partir do que voc\xEA digitou." },
+    busca_rastreio: { titulo: "Busca no rastreio de nota", futuro: "Dossi\xEA da nota: emiss\xE3o, cr\xE9ditos, rateios e recursos, em um relat\xF3rio curto." },
+    busca_pagamentos: { titulo: "Busca no rastreio de pagamento", futuro: "Para onde foi cada real do TED que voc\xEA buscou." },
+    busca_triagem: { titulo: "Busca na triagem", futuro: "Sugerir o rateio do cr\xE9dito encontrado e as NFs / recursos candidatos." },
+    busca_recursos: { titulo: "Busca nos recursos", futuro: "Resumo da glosa, prazo TISS e minuta sugerida." },
+    busca_conciliacao: { titulo: "Busca na concilia\xE7\xE3o tardia", futuro: "Localizar o t\xEDtulo antigo e sugerir a baixa com o cr\xE9dito recente." },
+    busca_cobranca: { titulo: "Busca na cobran\xE7a", futuro: "Hist\xF3rico de contatos e minuta pronta para o conv\xEAnio da nota buscada." },
+    busca_contabilidade: { titulo: "Busca na DRE", futuro: "Como aquela nota entra no emitido, no caixa e na perda." },
+    busca_logs: { titulo: "Busca nos logs", futuro: "Linha do tempo de quem mexeu na nota ou no TED buscado." }
+  };
+  function htmlIaChip(ctx, tone = "light") {
+    const cls = tone === "dark" ? "w-9 h-9 rounded-full bg-white/15 hover:bg-white/25 text-white border border-white/25" : tone === "search" ? "w-7 h-7 rounded-full bg-indigo-600 hover:bg-indigo-500 text-white shadow-sm" : tone === "search-dark" ? "w-7 h-7 rounded-full bg-white/20 hover:bg-white/30 text-white border border-white/25" : "w-9 h-9 rounded-full bg-indigo-600 hover:bg-indigo-500 text-white shadow-sm";
+    const icon = tone.startsWith("search") ? "text-[10px]" : "text-xs";
+    return `<button type="button" class="ia-chip ${cls} flex items-center justify-center shrink-0 transition" data-ia-ctx="${escapeHtml(ctx)}" title="An\xE1lise IA (em breve)" aria-label="An\xE1lise IA"><i class="fa-solid fa-wand-magic-sparkles ${icon}"></i></button>`;
+  }
+  function iaToneFromSlot(slot) {
+    const t2 = slot.getAttribute("data-ia-tone") || "light";
+    if (t2 === "dark" || t2 === "search" || t2 === "search-dark") return t2;
+    return "light";
+  }
+  function queryDaBuscaIa(ctx) {
+    const input = document.querySelector(`[data-ia-search="${ctx}"]`);
+    return input?.value.trim() || "";
+  }
+  function wireIaChips() {
+    document.querySelectorAll(".ia-slot").forEach((slot) => {
+      if (slot.querySelector(".ia-chip")) return;
+      const ctx = slot.getAttribute("data-ia") || "alertas";
+      slot.innerHTML = htmlIaChip(ctx, iaToneFromSlot(slot));
+    });
+    document.querySelectorAll(".ia-chip").forEach((btn) => {
+      if (btn.dataset.wired === "1") return;
+      btn.dataset.wired = "1";
+      btn.addEventListener("click", (e2) => {
+        e2.preventDefault();
+        e2.stopPropagation();
+        const ctx = btn.getAttribute("data-ia-ctx") || "alertas";
+        abrirIaPlaceholder(ctx, queryDaBuscaIa(ctx));
+      });
+    });
+    document.querySelectorAll("[data-ia-search]").forEach((input) => {
+      const sync = () => {
+        const ctx = input.getAttribute("data-ia-search") || "";
+        const chip = document.querySelector(`.ia-chip[data-ia-ctx="${ctx}"]`);
+        const live = input.value.trim().length >= 2;
+        chip?.classList.toggle("animate-pulse", live);
+        chip?.classList.toggle("ring-2", live);
+        chip?.classList.toggle("ring-amber-300", live);
+      };
+      if (input.dataset.iaSearchWired !== "1") {
+        input.dataset.iaSearchWired = "1";
+        input.addEventListener("input", sync);
+        input.addEventListener("keydown", (e2) => {
+          if (e2.key !== "Enter") return;
+          e2.preventDefault();
+          abrirIaPlaceholder(input.getAttribute("data-ia-search") || "busca", input.value);
+        });
+      }
+      sync();
+    });
+  }
+  function abrirIaPlaceholder(ctx, query = "") {
+    const info = IA_CONTEXTOS[ctx] || { titulo: "Concili.a IA", futuro: "An\xE1lise espec\xEDfica desta tela." };
+    setText("ia-ph-contexto", info.titulo);
+    setText("ia-ph-futuro", info.futuro);
+    const q = query.trim();
+    const qEl = $2("ia-ph-query");
+    if (qEl) {
+      qEl.textContent = q ? `Busca: \u201C${q}\u201D. Quando a fase 2 ligar, a IA resume o resultado.` : "";
+      qEl.classList.toggle("hidden", !q);
+    }
+    openModal("modal-ia-placeholder");
+  }
   function renderCloudStatus() {
     const label = $2("cloud-status-label");
     const dot = $2("cloud-status-dot");
@@ -45466,15 +45510,6 @@ This typically indicates that your device does not have a healthy Internet conne
     if (AuthService.getSession().isLoggedIn) renderSuiteCharts(filtered.faturas);
     else destroyCharts();
   }
-  function renderIaOptions() {
-    const appData = DataService.getAppData();
-    const select = $2("ia-select-deposito");
-    if (!select) return;
-    const pendentes = appData.depositos.filter((d) => isDepositoAberto(d));
-    select.innerHTML = pendentes.length ? pendentes.map(
-      (d) => `<option value="${d.id}">${escapeHtml(d.convenio)} - ${formatBRL(valorDisponivelDeposito(d))} (${formatDateBR(d.data_recebimento)})</option>`
-    ).join("") : `<option value="">Nenhum dep\xF3sito pendente</option>`;
-  }
   function renderAllViews() {
     const appData = DataService.getAppData();
     appData.faturas.forEach((f) => recalculateFaturaSaldo(f));
@@ -45492,9 +45527,9 @@ This typically indicates that your device does not have a healthy Internet conne
     renderCobrancaTable();
     renderContabilidadeTable();
     renderLogsTable();
-    renderIaOptions();
     wireSortableHeaders();
     ["dashboard", "triagem", "contabilidade", "logs", "rastreio", "pagamentos"].forEach(syncCustomRangeVisibility);
+    wireIaChips();
   }
   function autoCalcularPrevisaoPgto() {
     const convenio = inputVal("input-convenio");
@@ -46933,54 +46968,6 @@ ${draft.corpo}`;
       showToast(resultado === "DEFERIDO" ? "Recurso deferido e baixado." : "Perda acatada no DRE.");
     });
   }
-  function executarIaSmartMatch() {
-    const depId = inputVal("ia-select-deposito");
-    const appData = DataService.getAppData();
-    const dep = appData.depositos.find((d) => d.id === depId);
-    const output = $2("ia-match-result");
-    if (!output) return;
-    if (!dep) {
-      output.classList.remove("hidden");
-      output.innerHTML = `<p class="font-bold text-rose-700">Selecione um dep\xF3sito para realizar a an\xE1lise.</p>`;
-      return;
-    }
-    const match = smartMatch(dep, appData.faturas);
-    output.classList.remove("hidden");
-    if (!match) {
-      output.innerHTML = `<p class="font-bold text-amber-800">Nenhuma fatura em aberto encontrada para o conv\xEAnio ${escapeHtml(dep.convenio)}.</p>`;
-      return;
-    }
-    output.innerHTML = `
-    <p class="font-bold text-purple-900 flex items-center gap-1.5"><i class="fa-solid fa-wand-magic-sparkles text-amber-500"></i> Sugest\xE3o Smart Match (Confian\xE7a: ${match.score}%):</p>
-    <p class="text-slate-700 mt-1">Este cr\xE9dito de <b>${formatBRL(dep.valor)}</b> combina com a <b>${escapeHtml(match.faturaNota)}</b> (Saldo: ${formatBRL(match.saldo)}).</p>
-    <p class="text-[11px] text-slate-500 mt-1">${escapeHtml(match.motivo)} Motor determin\xEDstico \u2014 a API Gemini entra na fase seguinte.</p>
-    <button onclick="abrirModalVinculo('${dep.id}')" class="mt-2 px-3 py-1 bg-purple-700 text-white font-bold text-[11px] rounded-lg shadow">Vincular Agora &rarr;</button>`;
-  }
-  function gerarMinutaIa() {
-    const motivo = inputVal("ia-motivo-glosa");
-    const proc = inputVal("ia-procedimento");
-    const output = $2("ia-minuta-output");
-    if (!motivo) {
-      showAccessDeniedModal("Por favor, informe o motivo da glosa para redigir a minuta.");
-      return;
-    }
-    if (!output) return;
-    output.classList.remove("hidden");
-    output.textContent = `ILMO. SR. AUDITOR DA OPERADORA DE SA\xDADE
-
-RECURSO DE GLOSA TISS REGULAT\xD3RIO / R\xC9PLICA
-Procedimento: ${proc || "Atendimento Geral"}
-Motivo da Reten\xE7\xE3o: ${motivo}
-
-Prezados,
-
-Contestamos a glosa supramencionada haja vista que a assist\xEAncia foi integralmente prestada conforme laudo m\xE9dico anexado aos autos do prontu\xE1rio, cumprindo estritamente as diretrizes da ANS e TISS.
-
-Requeremos o rec\xE1lculo do lote, o restabelecimento do valor glosado e o cr\xE9dito na conta do prestador no prazo contratual.
-
-Atenciosamente,
-Auditoria M\xE9dica Hospitalar`;
-  }
   function abrirModalMatrizRBAC() {
     executarAcaoRole("canManagePermissions", () => {
       const appData = DataService.getAppData();
@@ -47065,6 +47052,7 @@ Auditoria M\xE9dica Hospitalar`;
       salvarNovaFatura,
       salvarNovoDeposito,
       onMoneyInput,
+      abrirIaPlaceholder,
       handleConvenioEmissaoChange,
       autoCalcularPrevisaoPgto,
       recalcularMultiLoteEmissao,
@@ -47099,8 +47087,6 @@ Auditoria M\xE9dica Hospitalar`;
       executarExclusaoDefinitiva,
       buscarConciliacaoTardia,
       baixaTardiaDefinitiva,
-      executarIaSmartMatch,
-      gerarMinutaIa,
       abrirModalMatrizRBAC,
       salvarMatrizRBAC,
       restaurarPermissoesPadrao,
@@ -47129,6 +47115,7 @@ Auditoria M\xE9dica Hospitalar`;
   }
   function bootConcilia() {
     bindGlobals();
+    wireIaChips();
     const session = AuthService.getSession();
     const stopCloudStatus = DataService.onCloudStatusChange(() => renderCloudStatus());
     const stopRemote = DataService.onRemoteData(() => {
