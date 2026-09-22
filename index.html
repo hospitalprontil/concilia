@@ -880,7 +880,7 @@ th[data-sort-col] {
       <section id="view-pagamentos" class="tab-content hidden space-y-6">
         <div class="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm">
           <h3 class="font-bold text-slate-800 text-sm">Rastreio de Pagamento</h3>
-          <p class="text-xs text-slate-500 mt-0.5">Todos os créditos do extrato e o dossiê: recebimento, rateios, NFs, recursos, glosas e saldo remanescente.</p>
+          <p class="text-xs text-slate-500 mt-0.5">Clique no TED e veja, de forma simples, para onde foi cada real: parte de NF, NF integral, recurso de glosa ou saldo ainda na triagem.</p>
         </div>
         <div class="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-sm flex flex-col md:flex-row justify-between items-center gap-4">
           <div class="flex flex-wrap items-center gap-3 w-full md:w-auto">
@@ -18058,6 +18058,197 @@ Pode nos retornar com o posicionamento, por favor?`;
       historico_rateio: [],
       ...partial
     };
+  }
+  function tedPagamentoValido(ted) {
+    const t2 = (ted || "").trim();
+    if (!t2 || t2 === "-") return false;
+    if (t2 === "RATEIO-EMISSAO") return false;
+    return true;
+  }
+  function chaveRateio(r2) {
+    return `${r2.tipo}|${r2.faturaId}|${r2.movId || ""}|${round2(r2.valor || 0)}|${r2.data || ""}`;
+  }
+  function collectPagamentosRastreio(faturas, depositos) {
+    const byTed = /* @__PURE__ */ new Map();
+    (depositos || []).forEach((d) => {
+      const ted = (d.identificador_bancario || "").trim();
+      if (!tedPagamentoValido(ted)) return;
+      byTed.set(ted, {
+        id: d.id,
+        ted,
+        convenio: d.convenio,
+        data: d.data_recebimento,
+        valor: round2(d.valor || 0),
+        observacao: d.observacao || "",
+        status: d.status,
+        depositoId: d.id,
+        rateios: [...d.rateios || []],
+        origem: "DEPOSITO"
+      });
+    });
+    const pushRateio = (row, lanc) => {
+      const key = chaveRateio(lanc);
+      if (row.rateios.some((r2) => chaveRateio(r2) === key)) return;
+      row.rateios.push(lanc);
+    };
+    (faturas || []).forEach((f) => {
+      (f.movimentacoes || []).forEach((m2) => {
+        const ted = (m2.identificador_bancario || "").trim();
+        if (!tedPagamentoValido(ted)) return;
+        let row = byTed.get(ted);
+        if (!row) {
+          row = {
+            id: `TED_${ted}`,
+            ted,
+            convenio: f.convenio,
+            data: m2.data_movimentacao || f.data_emissao,
+            valor: 0,
+            observacao: m2.observacao_rateio || "",
+            status: "Conciliado",
+            rateios: [],
+            origem: "VINCULO_LEGADO"
+          };
+          byTed.set(ted, row);
+        }
+        (m2.historico_rateio || []).forEach((h) => {
+          if (!tedPagamentoValido(h.ted) || h.ted !== ted) return;
+          pushRateio(row, { ...h, faturaId: h.faturaId || f.id, numero_nota: h.numero_nota || f.numero_nota, movId: h.movId || m2.id });
+        });
+        if ((m2.valor_pago || 0) > 9e-3) {
+          pushRateio(row, {
+            data: m2.data_movimentacao || row.data,
+            depositoId: row.depositoId || "",
+            ted,
+            tipo: "NF",
+            valor: round2(m2.valor_pago || 0),
+            faturaId: f.id,
+            numero_nota: f.numero_nota,
+            movId: m2.id,
+            criaGlosa: (m2.valor_glosado || 0) > 9e-3,
+            observacao: m2.observacao_rateio || ""
+          });
+        }
+        if ((m2.valor_recuperado_recurso || 0) > 9e-3) {
+          pushRateio(row, {
+            data: m2.data_movimentacao || row.data,
+            depositoId: row.depositoId || "",
+            ted,
+            tipo: "RECURSO",
+            valor: round2(m2.valor_recuperado_recurso || 0),
+            faturaId: f.id,
+            numero_nota: f.numero_nota,
+            movId: m2.id,
+            protocolo: m2.protocolo_recurso,
+            observacao: m2.observacao_rateio || ""
+          });
+        }
+      });
+    });
+    const list = Array.from(byTed.values()).map((row) => {
+      const rateado = round2(row.rateios.reduce((acc, r2) => acc + (r2.valor || 0), 0));
+      if (row.origem === "VINCULO_LEGADO") {
+        row.valor = rateado;
+        row.status = "Conciliado";
+      } else {
+        const residual = round2(Math.max(0, row.valor - (rateado || 0)));
+        if (row.rateios.length) {
+          row.status = residual <= 9e-3 ? "Conciliado" : "Rateado Parcial";
+        }
+      }
+      return row;
+    });
+    list.sort((a, b2) => (b2.data || "").localeCompare(a.data || "") || a.ted.localeCompare(b2.ted));
+    return list;
+  }
+  function detalharPagamento(pag, faturas) {
+    const linhas = [];
+    let nfTotal = 0;
+    let recTotal = 0;
+    (pag.rateios || []).forEach((h) => {
+      const fat = faturas.find((f) => f.id === h.faturaId) || faturas.find((f) => f.numero_nota === h.numero_nota);
+      const mov = fat?.movimentacoes.find((m2) => h.movId && m2.id === h.movId) || fat?.movimentacoes.find((m2) => m2.identificador_bancario === pag.ted);
+      const glosaMov = h.tipo === "NF" && (h.criaGlosa || mov && (mov.valor_glosado || 0) > 9e-3) ? round2(mov?.valor_glosado || 0) : 0;
+      const aberto = mov ? valorARecursar(mov) : 0;
+      const recuperado = mov?.valor_recuperado_recurso || 0;
+      let natureza = "";
+      let integral = false;
+      if (h.tipo === "NF") {
+        nfTotal += h.valor || 0;
+        const totalNota = fat?.valor_total || 0;
+        if (glosaMov > 9e-3) {
+          natureza = "Pagamento parcial da NF, com glosa enviada \xE0 auditoria (SEM RECURSO)";
+          integral = false;
+        } else if (totalNota > 0 && (h.valor || 0) + 9e-3 >= totalNota) {
+          natureza = "Pagamento integral da NF";
+          integral = true;
+        } else if ((fat?.valor_saldo || 0) <= 9e-3) {
+          natureza = "Pagamento que liquidou o saldo da NF";
+          integral = true;
+        } else {
+          natureza = "Pagamento parcial da NF (saldo da nota mantido)";
+          integral = false;
+        }
+      } else {
+        recTotal += h.valor || 0;
+        if (aberto <= 9e-3) {
+          natureza = "Pagamento integral do recurso de glosa \u2014 recurso liquidado";
+          integral = true;
+        } else {
+          natureza = "Pagamento parcial do recurso de glosa \u2014 ainda h\xE1 saldo a recursar";
+          integral = false;
+        }
+      }
+      linhas.push({
+        tipo: h.tipo,
+        data: h.data || pag.data,
+        valor: round2(h.valor || 0),
+        numero_nota: h.numero_nota || fat?.numero_nota || "-",
+        remessa: fat?.numero_remessa || "-",
+        lote: fat?.numero_lote || "-",
+        convenio: fat?.convenio || pag.convenio,
+        natureza,
+        integral,
+        glosa: glosaMov,
+        glosaDestino: glosaMov > 9e-3 ? "SEM RECURSO" : "",
+        protocolo: h.protocolo || mov?.protocolo_recurso || "-",
+        instancia: mov?.instancia_recurso || "RECURSO",
+        statusParcela: mov?.status_parcela || "",
+        saldoNota: round2(fat?.valor_saldo || 0),
+        statusNota: fat?.status || "",
+        valorNota: round2(fat?.valor_total || 0),
+        emAbertoRecurso: round2(aberto),
+        recuperadoRecurso: round2(recuperado),
+        observacao: h.observacao || mov?.observacao_rateio || "",
+        motivoGlosa: mov?.motivo_glosa || "",
+        tituloRecurso: mov?.titulo_recurso || "",
+        anotacaoRecurso: mov?.anotacao_recurso || ""
+      });
+    });
+    nfTotal = round2(nfTotal);
+    recTotal = round2(recTotal);
+    const residual = round2(Math.max(0, (pag.valor || 0) - nfTotal - recTotal));
+    return { nfTotal, recTotal, residual, linhas };
+  }
+  function fraseDestinoPagamento(l2) {
+    if (l2.tipo === "RECURSO") {
+      const rec = l2.protocolo && l2.protocolo !== "-" && !/^SEM RECURSO$/i.test(l2.protocolo) ? l2.protocolo : "recurso de glosa";
+      const titulo2 = l2.emAbertoRecurso <= 9e-3 ? `foi para pagar integralmente o recurso ${rec} da ${l2.numero_nota}` : `foi para pagar parte do recurso ${rec} da ${l2.numero_nota}`;
+      const complemento = l2.emAbertoRecurso <= 9e-3 ? "Recurso liquidado." : `Ainda resta ${formatBRL(l2.emAbertoRecurso)} em aberto nesse recurso.`;
+      return { titulo: titulo2, complemento };
+    }
+    let titulo;
+    if (l2.valorNota > 0 && l2.valor + 9e-3 >= l2.valorNota) {
+      titulo = `foi para pagar integralmente a ${l2.numero_nota}`;
+    } else if (l2.saldoNota <= 9e-3) {
+      titulo = `foi para quitar o saldo da ${l2.numero_nota}`;
+    } else {
+      titulo = `foi para pagar parte da ${l2.numero_nota}`;
+    }
+    const bits = [];
+    if (l2.saldoNota > 9e-3) bits.push(`Ainda resta ${formatBRL(l2.saldoNota)} de saldo nessa nota.`);
+    if (l2.glosa > 9e-3) bits.push(`A diferen\xE7a de ${formatBRL(l2.glosa)} entrou como SEM RECURSO.`);
+    if (l2.observacao) bits.push(l2.observacao);
+    return { titulo, complemento: bits.join(" ") };
   }
   function groupByMonth(faturas) {
     const mesesMap = {};
@@ -44342,14 +44533,15 @@ This typically indicates that your device does not have a healthy Internet conne
     tbody.innerHTML = "";
     const filters = readTabFilters("pagamentos");
     const hoje = todayISO();
-    const filtered = (appData.depositos || []).filter((d) => {
+    const todos = collectPagamentosRastreio(appData.faturas || [], appData.depositos || []);
+    const filtered = todos.filter((d) => {
       if (filters.convenio && d.convenio !== filters.convenio) return false;
       if (filters.status && d.status !== filters.status) return false;
-      if (!inPeriodo(d.data_recebimento, { periodo: filters.periodo, dataInicio: filters.dataInicio, dataFim: filters.dataFim }, hoje)) {
+      if (!inPeriodo(d.data, { periodo: filters.periodo, dataInicio: filters.dataInicio, dataFim: filters.dataFim }, hoje)) {
         return false;
       }
       const extra = (d.rateios || []).flatMap((r2) => [r2.numero_nota, r2.protocolo, r2.observacao, r2.ted]);
-      return matchesSearch(filters.search, [d.identificador_bancario, d.convenio, d.observacao, d.status, ...extra]);
+      return matchesSearch(filters.search, [d.ted, d.convenio, d.observacao, d.status, ...extra]);
     });
     setText("lbl-count-pagamentos", String(filtered.length));
     if (!filtered.length) {
@@ -44357,77 +44549,82 @@ This typically indicates that your device does not have a healthy Internet conne
       return;
     }
     const ordered = sortedRows("pagamentos", filtered, {
-      data: (d) => d.data_recebimento || "",
+      data: (d) => d.data || "",
       convenio: (d) => d.convenio,
-      ted: (d) => d.identificador_bancario,
+      ted: (d) => d.ted,
       valor: (d) => d.valor || 0,
-      rateado: (d) => d.valor_rateado || 0,
-      saldo: (d) => valorDisponivelDeposito(d),
+      rateado: (d) => (d.rateios || []).reduce((acc, r2) => acc + (r2.valor || 0), 0),
+      saldo: (d) => Math.max(0, (d.valor || 0) - (d.rateios || []).reduce((acc, r2) => acc + (r2.valor || 0), 0)),
       status: (d) => d.status
     });
     ordered.forEach((d) => {
-      const alocado = d.valor_rateado || (d.rateios || []).reduce((acc, r2) => acc + (r2.valor || 0), 0);
-      const saldo = valorDisponivelDeposito(d);
+      const alocado = (d.rateios || []).reduce((acc, r2) => acc + (r2.valor || 0), 0);
+      const saldo = Math.max(0, roundMoney(d.valor) - roundMoney(alocado));
+      const rowId = d.id.replace(/[^a-zA-Z0-9_-]/g, "_");
       const tr = document.createElement("tr");
       tr.className = "hover:bg-slate-50 text-xs border-b border-slate-100 cursor-pointer";
       tr.onclick = (e2) => {
-        if (!e2.target.closest("button")) toggleAccordionRow(`pag-${d.id}`);
+        if (!e2.target.closest("button")) toggleAccordionRow(`pag-${rowId}`);
       };
       tr.innerHTML = `
       <td class="p-3.5 text-center">
-        <button onclick="toggleAccordionRow('pag-${d.id}')" class="p-1 hover:bg-slate-200 rounded-lg text-slate-500">
-          <i id="chevron-pag-${d.id}" class="fa-solid fa-chevron-down text-xs transition-transform"></i>
+        <button onclick="toggleAccordionRow('pag-${rowId}')" class="p-1 hover:bg-slate-200 rounded-lg text-slate-500">
+          <i id="chevron-pag-${rowId}" class="fa-solid fa-chevron-down text-xs transition-transform"></i>
         </button>
       </td>
-      <td class="p-3.5 font-semibold">${formatDateBR(d.data_recebimento)}</td>
+      <td class="p-3.5 font-semibold">${formatDateBR(d.data)}</td>
       <td class="p-3.5 font-bold text-indigo-900">${escapeHtml(d.convenio)}</td>
-      <td class="p-3.5 font-mono font-bold text-slate-700">${escapeHtml(d.identificador_bancario)}</td>
+      <td class="p-3.5 font-mono font-bold text-slate-700">${escapeHtml(d.ted)}</td>
       <td class="p-3.5 font-extrabold text-emerald-700">${formatBRL(d.valor)}</td>
       <td class="p-3.5 font-semibold text-indigo-700">${formatBRL(alocado)}</td>
       <td class="p-3.5 font-bold ${saldo > 9e-3 ? "text-amber-600" : "text-emerald-600"}">${formatBRL(saldo)}</td>
       <td class="p-3.5">${badgeStatusDeposito(d.status)}</td>`;
       tbody.appendChild(tr);
       const trSub = document.createElement("tr");
-      trSub.id = `subrow-pag-${d.id}`;
+      trSub.id = `subrow-pag-${rowId}`;
       trSub.className = "hidden bg-slate-50 border-b border-slate-200";
-      trSub.innerHTML = `<td colspan="8" class="p-4 pl-10 text-xs">${htmlTimelinePagamento(d, appData.faturas || [])}</td>`;
+      trSub.innerHTML = `<td colspan="8" class="p-4 pl-10 text-xs">${htmlTimelinePagamento(d, appData)}</td>`;
       tbody.appendChild(trSub);
     });
   }
-  function htmlTimelinePagamento(d, faturas) {
-    const evs = [];
-    evs.push({
-      data: d.data_recebimento,
-      titulo: "Cr\xE9dito no extrato",
-      detalhe: `${d.identificador_bancario} \xB7 ${formatBRL(d.valor)}${d.observacao ? ` \xB7 ${d.observacao}` : ""}`
+  function roundMoney(n2) {
+    return Math.round((n2 + Number.EPSILON) * 100) / 100;
+  }
+  function htmlTimelinePagamento(d, appData) {
+    const dossie = detalharPagamento(d, appData.faturas || []);
+    const destinos = dossie.linhas.map((l2) => {
+      const frase = fraseDestinoPagamento(l2);
+      return `<div class="flex items-start justify-between gap-3 py-2 border-b border-slate-100 last:border-0">
+      <div class="min-w-0">
+        <p class="text-[12px] text-slate-800"><b class="font-extrabold text-emerald-700">${formatBRL(l2.valor)}</b> ${escapeHtml(frase.titulo)}</p>
+        <p class="text-[11px] text-slate-500 mt-0.5">${escapeHtml(frase.complemento)}</p>
+      </div>
+    </div>`;
     });
-    (d.rateios || []).forEach((h) => {
-      const fat = faturas.find((f) => f.id === h.faturaId);
-      const extra = h.tipo === "RECURSO" ? `recurso ${h.protocolo || "-"}` : h.criaGlosa ? "pagamento de NF \xB7 glosa \u2192 SEM RECURSO" : "pagamento de NF";
-      evs.push({
-        data: h.data || d.data_recebimento,
-        titulo: "Rateio",
-        detalhe: `${extra} \xB7 ${h.numero_nota || fat?.numero_nota || "-"} \xB7 ${formatBRL(h.valor)}${h.observacao ? ` \xB7 ${h.observacao}` : ""}`
-      });
-    });
-    const saldo = valorDisponivelDeposito(d);
-    if (d.status === "Conciliado") {
-      evs.push({ data: d.data_recebimento, titulo: "Cr\xE9dito conciliado", detalhe: "TED totalmente rateado." });
-    } else if (saldo > 9e-3 && (d.rateios || []).length) {
-      evs.push({ data: d.data_recebimento, titulo: "Saldo remanescente", detalhe: `${formatBRL(saldo)} ainda a vincular na triagem.` });
+    if (dossie.residual > 9e-3) {
+      destinos.push(`<div class="flex items-start justify-between gap-3 py-2">
+      <div>
+        <p class="text-[12px] text-slate-800"><b class="font-extrabold text-amber-700">${formatBRL(dossie.residual)}</b> restante ainda aguardando rateio</p>
+        <p class="text-[11px] text-slate-500 mt-0.5">Permanece na triagem at\xE9 ser vinculado.</p>
+      </div>
+    </div>`);
     }
-    evs.sort((a, b2) => (a.data || "").localeCompare(b2.data || ""));
-    const linhas = evs.map(
-      (e2) => `<div class="flex gap-2 text-[11px] py-1">
-        <span class="font-mono text-slate-400 w-20 shrink-0">${formatDateBR(e2.data)}</span>
-        <span><b class="text-slate-800">${escapeHtml(e2.titulo)}:</b> <span class="text-slate-600">${escapeHtml(e2.detalhe)}</span></span>
-      </div>`
-    ).join("");
-    const alocado = (d.rateios || []).reduce((acc, r2) => acc + (r2.valor || 0), 0) || (d.valor_rateado || 0);
-    return `<div class="p-3 bg-white border border-slate-200 rounded-xl space-y-2">
-    <p class="font-bold text-slate-800">Dossi\xEA ${escapeHtml(d.identificador_bancario)}</p>
-    <p class="text-[11px] text-slate-500">${escapeHtml(d.convenio)} \xB7 TED ${formatBRL(d.valor)} \xB7 rateado ${formatBRL(alocado)} \xB7 saldo ${formatBRL(saldo)}</p>
-    <div class="pt-1">${linhas || `<p class="text-[11px] text-slate-500 italic">Nenhum rateio neste pagamento ainda.</p>`}</div>
+    const corpo = destinos.length ? destinos.join("") : `<p class="text-[12px] text-slate-500 italic py-1">Este cr\xE9dito ainda n\xE3o foi vinculado. Os ${formatBRL(d.valor)} continuam aguardando rateio.</p>`;
+    const partes = [
+      ...dossie.linhas.map((l2) => formatBRL(l2.valor)),
+      ...dossie.residual > 9e-3 ? [formatBRL(dossie.residual)] : []
+    ];
+    const conta = partes.length ? `${partes.join(" + ")} = ${formatBRL(d.valor)}` : formatBRL(d.valor);
+    return `<div class="p-3 bg-white border border-slate-200 rounded-xl space-y-3">
+    <div>
+      <p class="text-[13px] text-slate-800">Caiu <b class="font-mono">${escapeHtml(d.ted)}</b> de <b class="text-emerald-700">${formatBRL(d.valor)}</b> do ${escapeHtml(d.convenio)} em ${formatDateBR(d.data)}.</p>
+      ${d.observacao ? `<p class="text-[11px] text-slate-500 mt-0.5">${escapeHtml(d.observacao)}</p>` : ""}
+    </div>
+    <div>
+      <p class="font-bold text-slate-800 text-[12px] mb-1">Para onde foi esse dinheiro</p>
+      ${corpo}
+    </div>
+    <p class="text-[11px] text-slate-400">Confer\xEAncia: ${escapeHtml(conta)}</p>
   </div>`;
   }
   function renderTriagemTable() {
